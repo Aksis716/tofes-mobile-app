@@ -4,7 +4,7 @@
     "slug": "tofes",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/Tofes.png",
     "scheme": "tofes",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,11 +19,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.aksis716.tofes"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/Tofes_Icon.png"
     },
     "plugins": [
       "expo-router",
@@ -43,6 +44,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "13865688-d0a4-4e46-897f-955163af129d"
+      }
     }
   }
 }
