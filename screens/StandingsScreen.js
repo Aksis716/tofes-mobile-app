@@ -168,10 +168,10 @@ const styles = StyleSheet.create({
   tabText: { color: "#333", fontWeight: "600", fontSize: 13 },
   activeTabText: { color: "#fff" },
 
-  tableHeader: { flexDirection: "row", paddingVertical: 6, borderBottomWidth: 2, borderColor: "#CBD5E1", backgroundColor: "#1077a7ff", borderRadius: 8, marginBottom: 4 },
+  tableHeader: { flexDirection: "row", paddingVertical: 20, borderBottomWidth: 2, borderColor: "#CBD5E1", backgroundColor: "#1077a7ff", borderRadius: 8, marginBottom: 4 },
   headerCell: { flex: 1, fontWeight: "bold", textAlign: "center", color: "#fff" },
 
-  tableRow: { flexDirection: "row", paddingVertical: 10, borderBottomWidth: 1, borderColor: "#E2E8F0", backgroundColor: "#fff", alignItems: "center", borderRadius: 8, marginVertical: 2 },
+  tableRow: { flexDirection: "row", paddingVertical: 15, borderBottomWidth: 1, borderColor: "#E2E8F0", backgroundColor: "#fff", alignItems: "center", borderRadius: 8, marginVertical: 2 },
   topTeam: { backgroundColor: "#D1FAE5" },
   secondTeam: { backgroundColor: "#FEF9C3" },
 
