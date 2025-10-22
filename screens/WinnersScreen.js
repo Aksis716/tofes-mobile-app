@@ -202,14 +202,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   teamName: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '600',
   },
   infoSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginVertical: 5,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
   },
   infoLabel: {
     fontSize: 16,

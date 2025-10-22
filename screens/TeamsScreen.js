@@ -1,44 +1,76 @@
-import { useNavigation } from '@react-navigation/native';
-import React from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation } from "@react-navigation/native";
+import { collection, getDocs } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { db } from "../firebaseConfig"; // make sure this path is correct
 
 export default function TeamsScreen() {
   const navigation = useNavigation();
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const teams = [
-    { id: '1', name: 'Avions', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Dakar', coach: 'John Smith' },
-    { id: '2', name: 'CFA', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Accra', coach: 'Michael Adams' },
-    { id: '3', name: 'EMAA', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Lagos', coach: 'David Johnson' },
-    { id: '4', name: 'EMART', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Nairobi', coach: 'James Brown' },
-    { id: '5', name: 'MGX', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Dakar', coach: 'John Smith' },
-    { id: '6', name: 'Hélicos', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Accra', coach: 'Michael Adams' },
-    { id: '7', name: 'CRDA', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Lagos', coach: 'David Johnson' },
-    { id: '8', name: 'Drones', logo: require('../assets/images/teams/TeamLogo.png'), city: 'Nairobi', coach: 'James Brown' },
-    // ➕ Add more teams as needed
-  ];
+  // 🔥 Fetch teams from Firestore
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "teams"));
+        const teamsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTeams(teamsData);
+      } catch (error) {
+        console.error("Error fetching teams:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeams();
+  }, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.teamCard}
-      onPress={() => navigation.navigate('TeamDetails', { team: item })}
+      onPress={() => navigation.navigate("TeamDetails", { team: item })}
     >
-      <Image source={item.logo} style={styles.logo} resizeMode="contain" />
+      {/* ✅ Display logo (if stored as URL in Firestore) */}
+      {item.logo ? (
+        <Image source={{ uri: item.logo }} style={styles.logo} resizeMode="contain" />
+      ) : (
+        <Image
+          source={require("../assets/images/teams/TeamLogo.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      )}
       <Text style={styles.teamName}>{item.name}</Text>
+      <Text style={styles.coach}>Coach: {item.coach}</Text>
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1077a7ff" />
+        <Text>Chargement des équipes...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-
-      <Text style={styles.text}>Les huit (08) équipes retenues pour la compétition sont indiquées ci-dessous. Elles s’affronteront
-         dans un système de poules avant de passer aux matchs de qualification directe. Les détails sur chaque équipe peuvent être
-         obtenus en cliquant sur son logo. </Text>
+      <Text style={styles.text}>
+        Les huit (08) équipes retenues pour la compétition sont indiquées ci-dessous. Elles
+        s’affronteront dans un système de poules avant de passer aux matchs de qualification directe.
+        Les détails sur chaque équipe peuvent être obtenus en cliquant sur son logo.
+      </Text>
 
       <FlatList
         data={teams}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        numColumns={2} // grid layout
+        numColumns={2}
         contentContainerStyle={styles.list}
       />
     </View>
@@ -46,45 +78,37 @@ export default function TeamsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 20,
-  },
+  container: { flex: 1, backgroundColor: "#fff", paddingTop: 20 },
   text: {
     fontSize: 15,
     marginLeft: 15,
     marginRight: 15,
     marginBottom: 10,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15,
-    color: '#1077a7ff',
-  },
-  list: {
-    paddingHorizontal: 10,
-  },
+  list: { paddingHorizontal: 10 },
   teamCard: {
     flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
     margin: 8,
     padding: 10,
     borderRadius: 12,
-    elevation: 2, // shadow on Android
+    elevation: 2,
   },
-  logo: {
-    width: 60,
-    height: 60,
-    marginBottom: 8,
-  },
+  logo: { width: 75, height: 75, marginBottom: 0 },
   teamName: {
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: '#1077a7ff',
+    fontWeight: "600",
+    textAlign: "center",
+    color: "#1077a7ff",
+  },
+  coach: {
+    fontSize: 12,
+    color: "#555",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

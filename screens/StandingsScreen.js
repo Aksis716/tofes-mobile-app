@@ -19,12 +19,16 @@ const topScorers = [
   { id: "1", player: "John Doe", team: "Eagles", goals: 12 },
   { id: "2", player: "Ali Karim", team: "Falcons", goals: 10 },
   { id: "3", player: "Luis Gomez", team: "Lions", goals: 9 },
+  { id: "4", player: "Judi Garcia", team: "Falcons", goals: 9 },
+  { id: "5", player: "Gonzales", team: "Lions", goals: 8 },
 ];
 
 const topAssists = [
   { id: "1", player: "Mohamed Salah", team: "Lions", assists: 9 },
   { id: "2", player: "Carlos Silva", team: "Falcons", assists: 7 },
   { id: "3", player: "Mehmet Kaya", team: "Panthers", assists: 6 },
+  { id: "4", player: "Silvinho", team: "Falcons", assists: 6 },
+  { id: "5", player: "Samuel Sullivan", team: "Panthers", assists: 5 },
 ];
 
 export default function StandingsScreen() {
@@ -163,12 +167,12 @@ export default function StandingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5", padding: 15 },
   tabs: { flexDirection: "row", justifyContent: "space-around", marginBottom: 10 },
-  tabButton: { paddingVertical: 8, paddingHorizontal: 8, backgroundColor: "#ddd", borderRadius: 20 , margin: 4},
+  tabButton: { paddingVertical: 8, paddingHorizontal: 8, backgroundColor: "#ddd", borderRadius: 20 , margin: 4, marginTop: 10},
   activeTab: { backgroundColor: "#1077a7ff" },
   tabText: { color: "#333", fontWeight: "600", fontSize: 13 },
   activeTabText: { color: "#fff" },
 
-  tableHeader: { flexDirection: "row", paddingVertical: 20, borderBottomWidth: 2, borderColor: "#CBD5E1", backgroundColor: "#1077a7ff", borderRadius: 8, marginBottom: 4 },
+  tableHeader: { flexDirection: "row", paddingVertical: 20, borderBottomWidth: 2, borderColor: "#CBD5E1", backgroundColor: "#1077a7ff", borderRadius: 8, marginBottom: 4, marginTop: 6 },
   headerCell: { flex: 1, fontWeight: "bold", textAlign: "center", color: "#fff" },
 
   tableRow: { flexDirection: "row", paddingVertical: 15, borderBottomWidth: 1, borderColor: "#E2E8F0", backgroundColor: "#fff", alignItems: "center", borderRadius: 8, marginVertical: 2 },
