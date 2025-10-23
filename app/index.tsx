@@ -315,7 +315,6 @@ useEffect(() => {
           drawerItemStyle: { height: 0 },
         }}
       />
-      {user?.role === "admin" && (
         <Drawer.Screen
           name="Admin Notifications"
           component={AdminNotificationScreen}
@@ -328,7 +327,6 @@ useEffect(() => {
             ),
           }}
         />
-      )}
     </Drawer.Navigator>
   );
 }

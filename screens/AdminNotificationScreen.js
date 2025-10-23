@@ -52,7 +52,15 @@ export default function AdminNotificationScreen() {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: "bold",
+          marginBottom: 20,
+          textAlign: "center",
+          color: "#1077a7ff",
+        }}
+      >
         Envoyer une notification 📢
       </Text>
 
@@ -88,8 +96,8 @@ const styles = {
   },
   button: {
     backgroundColor: "#1077a7ff",
-    padding: 15,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 20,
     alignItems: "center",
   },
 };
