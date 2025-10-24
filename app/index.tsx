@@ -2,16 +2,17 @@ import * as React from 'react';
 import { useEffect, useRef, useState } from "react";
 
 import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
 import { EventSubscription } from "expo-modules-core";
 
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
+import * as Updates from 'expo-updates';
 import { Alert, Platform } from "react-native";
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -23,6 +24,8 @@ import HomeScreen from '../screens/HomeScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import StandingsScreen from '../screens/StandingsScreen';
 
+import AdminFixturesScreen from '../screens/AdminFixturesScreen';
+import AdminTablesScreen from '../screens/AdminTablesScreen';
 import MatchScreen from '../screens/MatchScreen';
 import ParametersScreen from '../screens/ParametersScreen';
 import RulesScreen from '../screens/RulesScreen';
@@ -36,10 +39,33 @@ import NotificationScreen from "../screens/NotificationScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
 import CustomDrawer from '../components/CustomDrawer';
-
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+
+/**
+ * Register device token in Firestore (if not already present).
+ * @param {string|null|undefined} token
+ */
+async function registerDeviceInDatabase(token: string | null | undefined) {
+  if (!token) return;
+  try {
+    const q = query(collection(db, "devices"), where("expoToken", "==", token));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      await addDoc(collection(db, "devices"), {
+        expoToken: token,
+        createdAt: new Date().toISOString(),
+      });
+      console.log("✅ Device registered in Firestore.");
+    } else {
+      console.log("ℹ️ Device already registered.");
+    }
+  } catch (error) {
+    console.error("❌ Error saving device token:", error);
+  }
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -125,6 +151,43 @@ function TeamsStack() {
 
 export default function Index() {
 
+const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+  async function initPushToken() {
+    const token = await registerForPushNotificationsAsync();
+    if (token) {
+      console.log("Expo Push Token:", token);
+      await registerDeviceInDatabase(token);
+    }
+  }
+  initPushToken();
+}, []);
+
+useEffect(() => {
+  async function checkForUpdates() {
+    const update = await Updates.checkForUpdateAsync();
+    if (update.isAvailable) {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    }
+  }
+  checkForUpdates();
+}, []);
+
+useEffect(() => {
+  // live count of unread notifications
+  const q = collection(db, "notifications"); // or query for read==false if you store read flag
+  // if you store `read` flag, use: query(collection(db,"notifications"), where("read","==",false))
+  const unsub = onSnapshot(q, snapshot => {
+    // count unread (if you have read flag)
+    const unread = snapshot.docs.filter(d => !d.data().read).length;
+    setUnreadCount(unread);
+  }, err => console.error(err));
+
+  return () => unsub();
+}, []);
+
 const notificationListener = useRef<EventSubscription | null>(null);
 const responseListener = useRef<EventSubscription | null>(null);
 
@@ -179,32 +242,50 @@ useEffect(() => {
     );
   };
 
-  const TopRightIcons = ({ navigation }: any) => (
-    <View style={{ flexDirection: "row", alignItems: "center", marginRight: 15 }}>
-      {/* Notifications Page */}
-      <TouchableOpacity onPress={() => navigation.navigate("NotificationsPage")}>
-        <Ionicons
-          name="notifications-outline"
-          size={28}
-          color="#fff"
-          style={{ marginRight: 15 }}
-        />
-      </TouchableOpacity>
+const TopRightIcons = ({ navigation }: any) => (
+  <View style={{ flexDirection: "row", alignItems: "center", marginRight: 15 }}>
+    {/* Notifications */}
+    <TouchableOpacity onPress={() => navigation.navigate("NotificationsPage")}>
+      <View>
+        <Ionicons name="notifications-outline" size={28} color="#fff" style={{ marginRight: 15 }} />
+        {unreadCount > 0 && (
+          <View
+            style={{
+              position: "absolute",
+              right: 10,
+              top: -6,
+              backgroundColor: "red",
+              borderRadius: 8,
+              minWidth: 16,
+              height: 16,
+              paddingHorizontal: 3,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
 
-      {/* User icon */}
-      <TouchableOpacity
-        onPress={() => {
-          if (user) {
-            navigation.navigate("Profile");
-          } else {
-            navigation.navigate("Auth");
-          }
-        }}
-      >
-        <Ionicons name="person-circle-outline" size={35} color="#fff" />
-      </TouchableOpacity>
-    </View>
-  );
+    {/* User icon */}
+    <TouchableOpacity
+      onPress={() => {
+        if (user) {
+          navigation.navigate("Profile");
+        } else {
+          navigation.navigate("Auth");
+        }
+      }}
+    >
+      <Ionicons name="person-circle-outline" size={35} color="#fff" />
+    </TouchableOpacity>
+  </View>
+);
+
   
   return (
     <Drawer.Navigator
@@ -315,11 +396,55 @@ useEffect(() => {
           drawerItemStyle: { height: 0 },
         }}
       />
+      <Drawer.Screen
+        name="Matchs"
+        component={FixturesScreen}
+        options={{
+          title: "Matchs",
+          headerStyle: { backgroundColor: "#1077a7" },
+          headerTintColor: "#fff",
+          drawerItemStyle: { height: 0 },
+        }}
+      />
+      <Drawer.Screen
+        name="Programme"
+        component={ScheduleScreen}
+        options={{
+          title: "Programme",
+          headerStyle: { backgroundColor: "#1077a7" },
+          headerTintColor: "#fff",
+          drawerItemStyle: { height: 0 },
+        }}
+      />
         <Drawer.Screen
           name="Admin Notifications"
           component={AdminNotificationScreen}
           options={{
             title: "Notifications Admin",
+            headerStyle: { backgroundColor: "#1077a7" },
+            headerTintColor: "#fff",
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="megaphone-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="Admin Fixtures"
+          component={AdminFixturesScreen}
+          options={{
+            title: "Admin Fixtures",
+            headerStyle: { backgroundColor: "#1077a7" },
+            headerTintColor: "#fff",
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="megaphone-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="Admin Tablees"
+          component={AdminTablesScreen}
+          options={{
+            title: "Admin Tables",
             headerStyle: { backgroundColor: "#1077a7" },
             headerTintColor: "#fff",
             drawerIcon: ({ color, size }) => (
@@ -359,3 +484,5 @@ async function registerForPushNotificationsAsync() {
 
   return token;
 }
+
+

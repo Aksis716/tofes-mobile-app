@@ -1,56 +1,79 @@
-// screens/NotificationScreen.js
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { collection, doc, getDocs, orderBy, query, updateDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { db } from "../firebaseConfig";
 
-const notifications = [
-  {
-    id: "1",
-    title: "⚽ Début du match",
-    content: "Le match entre Lions et Eagles vient de commencer !",
-    time: "Il y a 2 min",
-  },
-  {
-    id: "2",
-    title: "🥅 But marqué !",
-    content: "L’équipe Lions vient de marquer un but.",
-    time: "Il y a 10 min",
-  },
-  {
-    id: "3",
-    title: "🏁 Fin du match",
-    content: "Score final: Lions 2 - 1 Eagles",
-    time: "Il y a 20 min",
-  },
-];
+export default function NotificationScreen({ navigation }) {
+  const [notifications, setNotifications] = useState([]);
 
-export default function NotificationScreen() {
+const fetchNotifications = async () => {
+  try {
+    const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+
+    const list = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.seconds
+          ? new Date(data.createdAt.seconds * 1000)
+          : data.createdAt
+          ? new Date(data.createdAt)
+          : new Date(0),
+      };
+    });
+
+    setNotifications(list);
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+  }
+};
+
+  useEffect(() => {
+  const unsubscribe = navigation.addListener("focus", fetchNotifications);
+  return unsubscribe;
+}, [navigation]);
+
+  const markAsReadAndNavigate = async (notification) => {
+    await updateDoc(doc(db, "notifications", notification.id), { read: true });
+    navigation.navigate(notification.target);
+  };
+
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.notification}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.content}>{item.content}</Text>
-            <Text style={styles.time}>{item.time}</Text>
-          </View>
-        )}
-      />
-    </View>
+  <FlatList
+    data={notifications}
+    keyExtractor={(item) => item.id}
+    renderItem={({ item }) => (
+      <TouchableOpacity
+        onPress={() => markAsReadAndNavigate(item)}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          padding: 15,
+          borderBottomWidth: 1,
+          borderColor: "#eee",
+          backgroundColor: item.read ? "#fff" : "#eef6ff",
+        }}
+      >
+        <Ionicons
+          name={item.icon || "notifications-outline"}
+          size={28}
+          color="#1077a7"
+          style={{ marginRight: 10 }}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: "bold" }}>{item.title}</Text>
+          <Text>{item.body}</Text>
+          <Text style={{ color: "gray", fontSize: 12 }}>
+            {item.createdAt instanceof Date
+              ? item.createdAt.toLocaleString()
+              : "Date not available"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    )}
+  />
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: "#f8f9fa" },
-  notification: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: "#1077a7",
-  },
-  title: { fontWeight: "bold", fontSize: 16, color: "#1077a7" },
-  content: { color: "#333", marginTop: 5 },
-  time: { fontSize: 12, color: "#6c757d", marginTop: 5 },
-});

@@ -43,7 +43,7 @@ export default function HomeScreen({ navigation }) {
          compétitivité saine au sein de nos Forces Armées.</Text>
 
       <Text style={styles.text}>C'est dans cette optique qu'une compétition de football a été initiée au sein de la Base Aérienne 101. Elle
-      oppose les différents escadrons et services dans un tournoi en poules suivi d'une phase à élimination directe. xxxx</Text>
+      oppose les différents escadrons et services dans un tournoi en poules suivi d'une phase à élimination directe. </Text>
 
       <View style={styles.buttonsContainer}>
         <TouchableOpacity
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     fontSize: 21,
     fontWeight: 'bold',
     marginBottom: 10,
-    marginTop: 20,
+    marginTop: 30,
     color: '#1077a7ff',
     textAlign: "center",
   },
@@ -96,6 +96,8 @@ const styles = StyleSheet.create({
     width: 320,   // must set width and height!
     height: 320,
     marginLeft: 50,
+    marginTop: -15,
+    marginBottom: -20,
   },
     image2: {
     width: 400,   // must set width and height!
@@ -109,7 +111,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 18,
-    padding: 5,
+    padding: 15,
     alignItems: 'center',
     marginVertical: 10,
     shadowColor: '#000',
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cardEmoji: {
-    fontSize: 20,
+    fontSize: 25,
     marginBottom: 1,
   },
   cardTitle: {

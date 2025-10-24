@@ -1,103 +1,127 @@
-import { collection, getDocs } from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { addDoc, collection, getDocs, serverTimestamp } from "firebase/firestore";
+import React, { useState } from "react";
+import { Alert, Button, Text, TextInput, View } from "react-native";
 import { db } from "../firebaseConfig";
 
 export default function AdminNotificationScreen() {
-  const [title, setTitle] = useState("");
+  const [type, setType] = useState("fixture");
   const [message, setMessage] = useState("");
-  const [tokens, setTokens] = useState([]);
 
-  useEffect(() => {
-    const fetchTokens = async () => {
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const allTokens = [];
-      usersSnapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.expoToken) {
-          allTokens.push(data.expoToken);
-        }
-      });
-      setTokens(allTokens);
-    };
-    fetchTokens();
-  }, []);
+  const typeData = {
+    fixture: { title: "📅 Update Match", icon: "calendar-outline", target: "Matchs" },
+    schedule: { title: "🕒 Update Programme", icon: "time-outline", target: "Programme" },
+    info: { title: "ℹ️ Information", icon: "information-circle-outline", target: "Accueil" },
+  };
 
   const sendNotification = async () => {
-    if (!title || !message) {
-      return Alert.alert("Erreur", "Veuillez remplir tous les champs !");
-    }
+    try {
+      const { title, icon, target } = typeData[type];
+      const tokensSnapshot = await getDocs(collection(db, "devices"));
+      const tokens = tokensSnapshot.docs.map(doc => doc.data().expoToken);
 
-    for (const token of tokens) {
-      await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Accept-encoding": "gzip, deflate",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: token,
-          sound: "default",
-          title: title,
-          body: message,
-        }),
+      // Save in database (for users to fetch)
+      await addDoc(collection(db, "notifications"), {
+        title,
+        body: message,
+        icon,
+        type,
+        target,
+        read: false,
+        createdAt: serverTimestamp(),
       });
-    }
 
-    Alert.alert("✅ Succès", "Notification envoyée à tous les utilisateurs !");
-    setTitle("");
-    setMessage("");
+      // Send notification to all tokens
+      await Promise.all(
+        tokens.map(token =>
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              to: token,
+              title,
+              body: message,
+              data: { screen: target },
+            }),
+          })
+        )
+      );
+
+      Alert.alert("✅ Succès", "Notification envoyée à tous les utilisateurs!");
+      setMessage("");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("❌ Erreur", "Notification non envoyée!");
+    }
   };
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
+    <View style={{ padding: 20 }}>
       <Text
         style={{
-          fontSize: 18,
           fontWeight: "bold",
-          marginBottom: 20,
+          fontSize: 18,
+          marginBottom: 10,
+          color: "#1077a7ff",
           textAlign: "center",
+        }}
+      >
+        Envoyer Notification
+      </Text>
+
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "bold",
           color: "#1077a7ff",
         }}
       >
-        Envoyer une notification 📢
+        Type:
       </Text>
+      <Picker
+        selectedValue={type}
+        onValueChange={setType}
+        style={{ marginVertical: 10 }}
+      >
+        <Picker.Item label="📅 Update Match" value="fixture" />
+        <Picker.Item label="🕒 Update Programme" value="schedule" />
+        <Picker.Item label="ℹ️ Information" value="info" />
+      </Picker>
 
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "bold",
+          color: "#1077a7ff",
+        }}
+      >
+        Message:
+      </Text>
       <TextInput
-        placeholder="Titre"
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        placeholder="Message"
-        style={[styles.input, { height: 100 }]}
+        style={{
+          borderWidth: 1,
+          borderColor: "#ccc",
+          borderRadius: 8,
+          padding: 10,
+          textAlignVertical: "top",
+          height: 120,
+          marginVertical: 30,
+        }}
         value={message}
         onChangeText={setMessage}
+        placeholder="Ecrivez votre message..."
         multiline
+        numberOfLines={5}
       />
 
-      <TouchableOpacity style={styles.button} onPress={sendNotification}>
-        <Text style={{ color: "#fff", fontWeight: "bold" }}>Envoyer</Text>
-      </TouchableOpacity>
+      <Button
+        title="Envoyer"
+        color="#1077a7ff"
+        onPress={sendNotification}
+      />
     </View>
   );
 }
-
-const styles = {
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: "#fff",
-  },
-  button: {
-    backgroundColor: "#1077a7ff",
-    padding: 12,
-    borderRadius: 20,
-    alignItems: "center",
-  },
-};

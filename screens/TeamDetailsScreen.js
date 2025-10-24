@@ -9,6 +9,14 @@ export default function TeamDetailsScreen({ route }) {
   const [teamData, setTeamData] = useState(team || null);
   const [loading, setLoading] = useState(!team || !team.players);
 
+  const teamLogos = {
+  "Avions": require("../assets/images/teams/AVIONS.png"),
+  "EDA": require("../assets/images/teams/EDA.png"),
+  "CRDA": require("../assets/images/teams/CRDA.png"),
+  // fallback if team not found
+  default: require("../assets/images/teams/TeamLogo.png"),
+  };
+
   useEffect(() => {
     const fetchTeam = async () => {
       if (!team.id) return;
@@ -50,11 +58,11 @@ export default function TeamDetailsScreen({ route }) {
 
   return (
     <View style={styles.container}>
-      {teamData?.logo ? (
-        <Image source={{ uri: teamData.logo }} style={styles.logo} resizeMode="contain" />
-      ) : (
-        <Image source={require("../assets/images/teams/TeamLogo.png")} style={styles.logo} resizeMode="contain" />
-      )}
+      <Image
+        source={teamLogos[teamData.name] || teamLogos.default}
+        style={styles.logo}
+        resizeMode="contain"
+      />
 
       <Text style={styles.teamName}>{teamData?.name}</Text>
 
@@ -62,7 +70,9 @@ export default function TeamDetailsScreen({ route }) {
         <Text style={styles.info}>🏙️ Nom Complet: {teamData?.fullname}</Text>
         <Text style={styles.info}>👔 Coach: {teamData?.coach}</Text>
         <Text style={styles.info}>⚽ Nombre de joueurs: {players.length}</Text>
-        <Text style={styles.info}>⭐ Tournois remportés: {teamData?.trophies}</Text>
+        <Text style={styles.info}>
+          ⭐ Tournois remportés: {teamData?.trophies}
+        </Text>
       </View>
 
       <Text style={styles.playersTitle}>👟 Joueurs Enregistrés</Text>
@@ -76,7 +86,9 @@ export default function TeamDetailsScreen({ route }) {
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <Text style={styles.noPlayers}>Aucun joueur enregistré pour cette équipe.</Text>
+        <Text style={styles.noPlayers}>
+          Aucun joueur enregistré pour cette équipe.
+        </Text>
       )}
     </View>
   );

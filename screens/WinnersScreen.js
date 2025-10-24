@@ -1,5 +1,5 @@
 import { default as React, useState } from 'react';
-import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +27,7 @@ const winnersData = [
     phase: '2ème Edition',
     year: 'Décembre 2022 - Janvier 2023',
     team: 'Avions',
-    logo: require('../assets/images/teams/TeamLogo.png'),
+    logo: require('../assets/images/teams/AVIONS.png'),
     finalist: 'EMART',
     puskas: 'ASP Souradji',
     bestPlayer: 'SCH Abdoul Hayou Amadou',
@@ -43,7 +43,7 @@ const winnersData = [
     phase: '1ère Edition',
     year: 'Décembre 2021 - Janvier 2022',
     team: 'Avions',
-    logo: require('../assets/images/teams/TeamLogo.png'),
+    logo: require('../assets/images/teams/AVIONS.png'),
     finalist: 'MGX',
     puskas: 'SGT Magagi',
     bestPlayer: '2CL Aminou Amadou',
@@ -59,6 +59,8 @@ const winnersData = [
 export default function PreviousWinnersScreen() {
     const [selectedPhase, setSelectedPhase] = useState('3ème Edition');
     const winner = winnersData.filter(r => r.phase === selectedPhase);
+
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const VirtualizedList = ({ children }) => {
       return (
@@ -134,12 +136,32 @@ export default function PreviousWinnersScreen() {
             data={item.ceremonyImages}
             horizontal
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item, i) => i.toString()}
+            keyExtractor={(img, i) => i.toString()}
             renderItem={({ item }) => (
-              <Image source={item} style={styles.ceremonyImage} />
+              <TouchableOpacity onPress={() => setSelectedImage(item)}>
+                <Image source={item} style={styles.ceremonyImage} />
+              </TouchableOpacity>
             )}
             style={styles.carousel}
             />
+
+            {/* 🔍 Modal for full-screen image */}
+            <Modal
+              visible={!!selectedImage}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={() => setSelectedImage(null)}
+            >
+              <View style={styles.modalBackground}>
+                <TouchableOpacity
+                  style={styles.fullImageContainer}
+                  activeOpacity={1}
+                  onPress={() => setSelectedImage(null)} // close on tap
+                >
+                  <Image source={selectedImage} style={styles.fullImage} />
+                </TouchableOpacity>
+              </View>
+            </Modal>
 
           </View>
         )}
@@ -196,14 +218,15 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   teamLogo: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
     resizeMode: 'contain',
-    marginRight: 10,
+    marginTop: 20,
   },
   teamName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '600',
+    color: '#1077a7ff',
   },
   infoSection: {
     flexDirection: 'row',
@@ -213,26 +236,43 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#555',
   },
   infoValue: {
     fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
+    color: '#1077a7ff',
+    fontWeight: '600',
   },
   carousel: {
     marginTop: 15,
   },
   ceremonyImage: {
     width: width * 0.7,
-    height: 150,
+    height: 200,
     borderRadius: 10,
     resizeMode: 'cover',
     justifyContent: 'center',
     alignSelf: 'center',
     marginVertical: 10,
     marginHorizontal: 10,
+  },
+    modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImageContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "90%",
+    height: "70%",
+    borderRadius: 10,
+    resizeMode: "contain",
   },
   phaseContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10, marginTop: 10, justifyContent: 'center' },
   phaseButton: { backgroundColor: '#ddd', padding: 8, borderRadius: 20, margin: 10 },

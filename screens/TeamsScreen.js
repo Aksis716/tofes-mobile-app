@@ -5,6 +5,14 @@ import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity,
 import { db } from "../firebaseConfig"; // make sure this path is correct
 
 export default function TeamsScreen() {
+  const teamLogos = {
+  "Avions": require("../assets/images/teams/AVIONS.png"),
+  "EDA": require("../assets/images/teams/EDA.png"),
+  "CRDA": require("../assets/images/teams/CRDA.png"),
+  // fallback if team not found
+  default: require("../assets/images/teams/TeamLogo.png"),
+  };
+
   const navigation = useNavigation();
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,17 +43,12 @@ export default function TeamsScreen() {
       onPress={() => navigation.navigate("TeamDetails", { team: item })}
     >
       {/* ✅ Display logo (if stored as URL in Firestore) */}
-      {item.logo ? (
-        <Image source={{ uri: item.logo }} style={styles.logo} resizeMode="contain" />
-      ) : (
-        <Image
-          source={require("../assets/images/teams/TeamLogo.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      )}
+      <Image
+        source={teamLogos[item.name] || teamLogos.default}
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <Text style={styles.teamName}>{item.name}</Text>
-      <Text style={styles.coach}>Coach: {item.coach}</Text>
     </TouchableOpacity>
   );
 
@@ -70,7 +73,7 @@ export default function TeamsScreen() {
         data={teams}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        numColumns={2}
+        numColumns={3}
         contentContainerStyle={styles.list}
       />
     </View>
@@ -85,14 +88,15 @@ const styles = StyleSheet.create({
     marginRight: 15,
     marginBottom: 10,
   },
-  list: { paddingHorizontal: 10 },
+  list: { paddingHorizontal: 1 },
   teamCard: {
     flex: 1,
     alignItems: "center",
     backgroundColor: "#f5f5f5",
-    margin: 8,
+    marginVertical: 12,
+    marginHorizontal: 8,
     padding: 10,
-    borderRadius: 12,
+    borderRadius: 15,
     elevation: 2,
   },
   logo: { width: 75, height: 75, marginBottom: 0 },
