@@ -43,7 +43,7 @@ export default function HomeScreen({ navigation }) {
          compétitivité saine au sein de nos Forces Armées.</Text>
 
       <Text style={styles.text}>C'est dans cette optique qu'une compétition de football a été initiée au sein de la Base Aérienne 101. Elle
-      oppose les différents escadrons et services dans un tournoi en poules suivi d'une phase à élimination directe. </Text>
+      oppose les différents escadrons et services dans un tournoi en poules suivi d'une phase à élimination directe. xxxxxx </Text>
 
       <View style={styles.buttonsContainer}>
         <TouchableOpacity
