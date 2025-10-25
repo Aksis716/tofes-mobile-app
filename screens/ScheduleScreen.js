@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 0,
     alignItems: "center",
   },
   date: { fontSize: 14, fontWeight: "700", color: "#1077a7ff" },
@@ -189,17 +189,19 @@ const styles = StyleSheet.create({
   groupCPhase: { backgroundColor: "#a71077ff" },
   semiPhase: { backgroundColor: "#f5a623" },
   finalPhase: { backgroundColor: "#d0021b" },
-  defaultPhase: { backgroundColor: "#888" },
+  defaultPhase: { backgroundColor: "#4d6145ff" },
 
   teamsContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
-    marginTop: -8,
-    paddingVertical: 6,
+    marginTop: -5,
+    marginBottom: -5,
+    paddingVertical: 1,
+    paddingHorizontal: 20,
   },
   team: { alignItems: "center", width: 110 },
-  teamLogo: { width: 50, height: 50, resizeMode: "contain", marginBottom: 2 },
+  teamLogo: { width: 50, height: 50, resizeMode: "contain", marginBottom: -5 },
   teamName: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },
   vs: { fontWeight: "bold", color: "#1077a7ff", fontSize: 16 },
 });

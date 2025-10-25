@@ -43,29 +43,30 @@ const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-/**
- * Register device token in Firestore (if not already present).
- * @param {string|null|undefined} token
- */
-async function registerDeviceInDatabase(token: string | null | undefined) {
+
+async function registerDeviceInDatabase(token: any) {
   if (!token) return;
+
   try {
     const q = query(collection(db, "devices"), where("expoToken", "==", token));
-    const querySnapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-    if (querySnapshot.empty) {
-      await addDoc(collection(db, "devices"), {
-        expoToken: token,
-        createdAt: new Date().toISOString(),
-      });
-      console.log("✅ Device registered in Firestore.");
-    } else {
+    if (!snapshot.empty) {
       console.log("ℹ️ Device already registered.");
+      return;
     }
+
+    await addDoc(collection(db, "devices"), {
+      expoToken: token,
+      platform: Platform.OS,
+      createdAt: new Date().toISOString(),
+    });
+    console.log("✅ New device registered in Firestore.");
   } catch (error) {
-    console.error("❌ Error saving device token:", error);
+    console.error("❌ Failed to register device:", error);
   }
 }
+
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -153,16 +154,51 @@ export default function Index() {
 
 const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-  async function initPushToken() {
-    const token = await registerForPushNotificationsAsync();
-    if (token) {
-      console.log("Expo Push Token:", token);
+const notificationListener = useRef<EventSubscription | null>(null);
+const responseListener = useRef<EventSubscription | null>(null);
+
+useEffect(() => {
+  async function setupNotifications() {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      if (!token) {
+        console.log("❌ No Expo token received.");
+        return;
+      }
+
+      console.log("✅ Got Expo token:", token);
+
+      // 1️⃣ Register in devices collection (global list)
       await registerDeviceInDatabase(token);
+
+      // 2️⃣ If logged in, also attach to user profile
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, { expoToken: token });
+        console.log("✅ Token linked to user:", user.uid);
+      }
+
+      // 3️⃣ Listeners for foreground and background notifications
+      const receivedSub = Notifications.addNotificationReceivedListener(n =>
+        console.log("📬 Notification received:", n)
+      );
+      const responseSub = Notifications.addNotificationResponseReceivedListener(r =>
+        console.log("📬 Notification opened:", r)
+      );
+
+      return () => {
+        receivedSub.remove();
+        responseSub.remove();
+      };
+    } catch (err) {
+      console.error("🔥 Error in setupNotifications:", err);
     }
   }
-  initPushToken();
+
+  setupNotifications();
 }, []);
+
 
 useEffect(() => {
   async function checkForUpdates() {
@@ -188,27 +224,8 @@ useEffect(() => {
   return () => unsub();
 }, []);
 
-const notificationListener = useRef<EventSubscription | null>(null);
-const responseListener = useRef<EventSubscription | null>(null);
 
-useEffect(() => {
-  registerForPushNotificationsAsync().then(token => {
-    console.log("Expo Push Token:", token);
-  });
 
-  notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-    console.log("📢 Notification Received:", notification);
-  });
-
-  responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-    console.log("👉 Notification Clicked:", response);
-  });
-
-  return () => {
-    notificationListener.current && notificationListener.current.remove();
-    responseListener.current && responseListener.current.remove();
-  };
-}, []);
 
   const [user, setUser] = useState<any>(null);
 
@@ -219,19 +236,6 @@ useEffect(() => {
     return unsubscribe;
   }, []);
 
-  useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        await updateDoc(doc(db, "users", user.uid), { expoToken: token });
-        console.log("✅ Expo push token saved for user:", user.uid);
-      }
-    }
-  });
-
-  return unsubscribe;
-}, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -458,22 +462,31 @@ const TopRightIcons = ({ navigation }: any) => (
 
 async function registerForPushNotificationsAsync() {
   if (!Device.isDevice) {
-    alert("Push notifications only work on physical devices.");
-    return;
+    console.log("⚠️ Push notifications only work on physical devices.");
+    return null;
   }
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
+
   if (existingStatus !== "granted") {
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
+
   if (finalStatus !== "granted") {
-    alert("Permission for notifications denied.");
-    return;
+    console.log("🚫 Notification permission not granted.");
+    return null;
   }
 
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
+  const { data: token } = await Notifications.getExpoPushTokenAsync({
+    projectId: "13865688-d0a4-4e46-897f-955163af129d", // ⚠️ Add this line
+  });
+
+  if (!token) {
+    console.log("❌ No token received from Expo.");
+    return null;
+  }
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
@@ -484,5 +497,6 @@ async function registerForPushNotificationsAsync() {
 
   return token;
 }
+
 
 

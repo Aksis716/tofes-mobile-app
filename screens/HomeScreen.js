@@ -4,7 +4,7 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 
 export default function HomeScreen({ navigation }) {
 
-  const nextMatchDate = new Date('2025-10-25T07:45:00'); // Change this to your next match date
+  const nextMatchDate = new Date('2025-10-28T07:45:00'); // Change this to your next match date
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function HomeScreen({ navigation }) {
          compétitivité saine au sein de nos Forces Armées.</Text>
 
       <Text style={styles.text}>C'est dans cette optique qu'une compétition de football a été initiée au sein de la Base Aérienne 101. Elle
-      oppose les différents escadrons et services dans un tournoi en poules suivi d'une phase à élimination directe. xxxxxx </Text>
+      oppose les différents escadrons et services dans un tournoi en poules suivi d'une phase à élimination directe. </Text>
 
       <View style={styles.buttonsContainer}>
         <TouchableOpacity
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   image: {
     width: 320,   // must set width and height!
     height: 320,
-    marginLeft: 50,
+    marginLeft: 30,
     marginTop: -15,
     marginBottom: -20,
   },
@@ -111,7 +111,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 18,
-    padding: 15,
+    padding: 5,
+    margin: 5,
     alignItems: 'center',
     marginVertical: 10,
     shadowColor: '#000',
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cardEmoji: {
-    fontSize: 25,
+    fontSize: 20,
     marginBottom: 1,
   },
   cardTitle: {
