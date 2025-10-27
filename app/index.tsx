@@ -23,6 +23,7 @@ import HomeScreen from '../screens/HomeScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import StandingsScreen from '../screens/StandingsScreen';
 
+import AdminCommentsScreen from '../screens/AdminCommentsScreen';
 import AdminFixturesScreen from '../screens/AdminFixturesScreen';
 import AdminTablesScreen from '../screens/AdminTablesScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
@@ -473,6 +474,22 @@ const TopRightIcons = ({ navigation }: any) => (
             }}
           />
           <Drawer.Screen
+            name="Admin Commentaires"
+            component={AdminCommentsScreen}
+            options={{
+              title: "Admin Commentaires",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons
+                  name="chatbubble-outline"
+                  size={size}
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Drawer.Screen
             name="Admin Matchs"
             component={AdminFixturesScreen}
             options={{
@@ -546,7 +563,9 @@ async function registerForPushNotificationsAsync() {
   }
 
   try {
-    const { data: token } = await Notifications.getExpoPushTokenAsync();
+    const { data: token } = await Notifications.getExpoPushTokenAsync({
+      projectId: "13865688-d0a4-4e46-897f-955163af129d",
+    });
 
     if (!token) {
       console.log("❌ Aucun token reçu depuis Expo.");

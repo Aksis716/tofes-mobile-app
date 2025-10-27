@@ -64,7 +64,7 @@ export default function TeamsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>
-        Les huit (08) équipes retenues pour la compétition sont indiquées ci-dessous. Elles
+        Les douze (12) équipes retenues pour la compétition sont indiquées ci-dessous. Elles
         s’affronteront dans un système de poules avant de passer aux matchs de qualification directe.
         Les détails sur chaque équipe peuvent être obtenus en cliquant sur son logo.
       </Text>
