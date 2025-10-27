@@ -64,8 +64,14 @@ export default function NotificationScreen({ navigation }) {
             flexDirection: "row",
             alignItems: "center",
             padding: 15,
+            marginBottom: 5,
+            marginTop: 5,
+            marginHorizontal: 5,
             borderBottomWidth: 1,
-            borderColor: "#eee",
+            borderRadius: 15,
+            elevation: 2,
+            borderWidth: 1,
+            borderColor: "#ddd",
             backgroundColor: item.read ? "#fff" : "#eef6ff",
           }}
         >

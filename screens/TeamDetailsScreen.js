@@ -75,7 +75,7 @@ export default function TeamDetailsScreen({ route }) {
         </Text>
       </View>
 
-      <Text style={styles.playersTitle}>👟 Joueurs Enregistrés</Text>
+      <Text style={styles.playersTitle}>👟  Joueurs Enregistrés</Text>
 
       {players.length > 0 ? (
         <FlatList
@@ -96,7 +96,7 @@ export default function TeamDetailsScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  logo: { width: 150, height: 150, alignSelf: "center", marginBottom: 1 },
+  logo: { width: 150, height: 150, alignSelf: "center", marginBottom: 1, marginTop: -20 },
   teamName: {
     fontSize: 24,
     fontWeight: "bold",
@@ -105,14 +105,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   infoContainer: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8fcffff",
     padding: 12,
     borderRadius: 10,
     marginBottom: 20,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   info: { fontSize: 16, marginBottom: 5 },
   playersTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 10,
@@ -122,11 +125,14 @@ const styles = StyleSheet.create({
   playerRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f8fcffff",
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 8,
     borderRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   playerNumber: { fontWeight: "bold", color: "#1077a7ff", marginHorizontal: 8 },
   playerName: { flex: 1, fontSize: 16, color: "#333" },

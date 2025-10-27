@@ -3,6 +3,7 @@ import {
   arrayRemove,
   arrayUnion,
   doc,
+  getDoc,
   onSnapshot,
   updateDoc,
 } from "firebase/firestore";
@@ -20,7 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { db } from "../../firebaseConfig";
+import { auth, db } from "../../firebaseConfig";
 
 export default function CommentsTab({ match }) {
   const matchId = match?.id || match?.matchId || match?.match?.id;
@@ -30,8 +31,31 @@ export default function CommentsTab({ match }) {
   const [text, setText] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [userRole, setUserRole] = useState(null); // ✅ track role
+  const [currentUser, setCurrentUser] = useState(null);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // ✅ Fetch user role when logged in
+  useEffect(() => {
+    const user = auth.currentUser;
+    setCurrentUser(user);
+
+    const fetchRole = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            setUserRole(userDoc.data().role);
+          }
+        } catch (err) {
+          console.error("Erreur de récupération du rôle :", err);
+        }
+      }
+    };
+
+    fetchRole();
+  }, []);
 
   // 🔹 Real-time listener for comments
   useEffect(() => {
@@ -154,12 +178,16 @@ export default function CommentsTab({ match }) {
           <Text style={styles.commentTime}>
             {new Date(item.addedAt).toLocaleString()}
           </Text>
-          <TouchableOpacity
-            onPress={() => handleDeleteComment(item)}
-            style={{ marginLeft: 8 }}
-          >
-            <Ionicons name="trash" size={20} color="#ff4444" />
-          </TouchableOpacity>
+
+          {/* ✅ Delete icon only for admin or creator */}
+          {currentUser && (userRole === "admin" || userRole === "creator") && (
+            <TouchableOpacity
+              onPress={() => handleDeleteComment(item)}
+              style={{ marginLeft: 8 }}
+            >
+              <Ionicons name="trash" size={20} color="#ff4444" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
       <Text style={styles.commentText}>{item.text}</Text>
@@ -253,21 +281,23 @@ export default function CommentsTab({ match }) {
           </Animated.View>
         )}
 
-        {/* Floating Add Comment Button */}
-        <TouchableOpacity style={styles.fab} onPress={toggleForm}>
-          <Ionicons
-            name={showForm ? "close" : "chatbubble-ellipses"}
-            size={24}
-            color="#fff"
-          />
-        </TouchableOpacity>
+        {/* 🔹 Floating Add Comment Button — visible only if logged in */}
+        {currentUser && (
+          <TouchableOpacity style={styles.fab} onPress={toggleForm}>
+            <Ionicons
+              name={showForm ? "close" : "chatbubble-ellipses"}
+              size={24}
+              color="#fff"
+            />
+          </TouchableOpacity>
+        )}
+
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-// styles remain the same...
-
+// ✅ All styles remain unchanged
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 10 },
   emptyBox: { alignItems: "center", marginTop: 50 },
@@ -296,11 +326,10 @@ const styles = StyleSheet.create({
   commentAuthor: { color: "#666", fontSize: 12 },
   commentTime: { color: "#999", fontSize: 11 },
   commentText: { color: "#222", lineHeight: 18, marginTop: 5 },
-
   fab: {
     position: "absolute",
-    bottom: 200,
-    right: 60,
+    bottom: 150,
+    right: 20,
     backgroundColor: "#1077a7",
     width: 56,
     height: 56,
@@ -313,7 +342,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 4,
   },
-
   formContainer: {
     position: "absolute",
     bottom: 0,

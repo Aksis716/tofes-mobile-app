@@ -160,13 +160,15 @@ const styles = StyleSheet.create({
   },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
   matchCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f8fcffff",
     borderRadius: 12,
     paddingVertical: 8,
     paddingLeft: 12,
     marginBottom: 12,
     paddingRight: 8,
-    elevation: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   headerRow: {
     flexDirection: "row",

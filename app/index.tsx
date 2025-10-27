@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -8,7 +8,6 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
-import { EventSubscription } from "expo-modules-core";
 
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
@@ -26,6 +25,7 @@ import StandingsScreen from '../screens/StandingsScreen';
 
 import AdminFixturesScreen from '../screens/AdminFixturesScreen';
 import AdminTablesScreen from '../screens/AdminTablesScreen';
+import AdminUsersScreen from '../screens/AdminUsersScreen';
 import MatchScreen from '../screens/MatchScreen';
 import ParametersScreen from '../screens/ParametersScreen';
 import RulesScreen from '../screens/RulesScreen';
@@ -153,9 +153,51 @@ function TeamsStack() {
 export default function Index() {
 
 const [unreadCount, setUnreadCount] = useState(0);
+const [user, setUser] = useState<any>(null);
+const [userRole, setUserRole] = useState<string | null>(null); // ✅ new state for role
 
-const notificationListener = useRef<EventSubscription | null>(null);
-const responseListener = useRef<EventSubscription | null>(null);
+  // 🔹 Watch for auth state and fetch user role
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        // get the role from Firestore
+        const userDoc = doc(db, "users", u.uid);
+        const snapshot = await getDocs(collection(db, "users"));
+        const found = snapshot.docs.find(d => d.id === u.uid);
+        if (found) {
+          const role = found.data().role;
+          setUserRole(role);
+        } else {
+          setUserRole(null);
+        }
+      } else {
+        setUserRole(null);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  // 🔹 Handle logout
+  const handleLogout = async () => {
+    Alert.alert(
+      "Confirmation",
+      "Voulez-vous vraiment vous déconnecter ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Se déconnecter",
+          style: "destructive",
+          onPress: async () => {
+            await signOut(auth);
+            setUser(null);
+            setUserRole(null);
+            Alert.alert("Déconnexion réussie !");
+          },
+        },
+      ]
+    );
+  };
 
 useEffect(() => {
   async function setupNotifications() {
@@ -225,10 +267,6 @@ useEffect(() => {
 }, []);
 
 
-
-
-  const [user, setUser] = useState<any>(null);
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -237,19 +275,10 @@ useEffect(() => {
   }, []);
 
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    Alert.alert(
-      "Succès 🎉",
-      "Déconnexion Réussie!",
-      [{ text: "OK" }]
-    );
-  };
-
 const TopRightIcons = ({ navigation }: any) => (
   <View style={{ flexDirection: "row", alignItems: "center", marginRight: 15 }}>
     {/* Notifications */}
-    <TouchableOpacity onPress={() => navigation.navigate("NotificationsPage")}>
+    <TouchableOpacity onPress={() => navigation.navigate("Notifications")}>
       <View>
         <Ionicons name="notifications-outline" size={28} color="#fff" style={{ marginRight: 15 }} />
         {unreadCount > 0 && (
@@ -281,7 +310,7 @@ const TopRightIcons = ({ navigation }: any) => (
         if (user) {
           navigation.navigate("Profile");
         } else {
-          navigation.navigate("Auth");
+          navigation.navigate("Authentification");
         }
       }}
     >
@@ -315,6 +344,7 @@ const TopRightIcons = ({ navigation }: any) => (
         headerRight: () => <TopRightIcons navigation={navigation} />,
       })}
     >
+      {/* 🌍 Public or shared pages */}
       <Drawer.Screen
         name="Accueil"
         component={BottomTabs}
@@ -360,21 +390,13 @@ const TopRightIcons = ({ navigation }: any) => (
           ),
         }}
       />
+
+      {/* 🔐 Auth screens (hidden from drawer) */}
       <Drawer.Screen
-        name="Auth"
+        name="Authentification"
         component={AuthScreen}
         options={{
           title: "Connexion / Inscription",
-          headerStyle: { backgroundColor: "#1077a7" },
-          headerTintColor: "#fff",
-          drawerItemStyle: { height: 0 },
-        }}
-      />
-      <Drawer.Screen
-        name="NotificationsPage"
-        component={NotificationScreen}
-        options={{
-          title: "Notifications",
           headerStyle: { backgroundColor: "#1077a7" },
           headerTintColor: "#fff",
           drawerItemStyle: { height: 0 },
@@ -391,7 +413,17 @@ const TopRightIcons = ({ navigation }: any) => (
         }}
       />
       <Drawer.Screen
-        name="MatchScreen"
+        name="Notifications"
+        component={NotificationScreen}
+        options={{
+          title: "Notifications",
+          headerStyle: { backgroundColor: "#1077a7" },
+          headerTintColor: "#fff",
+          drawerItemStyle: { height: 0 },
+        }}
+      />
+      <Drawer.Screen
+        name="Détails du Match"
         component={MatchScreen}
         options={{
           title: "Détails du Match",
@@ -420,49 +452,83 @@ const TopRightIcons = ({ navigation }: any) => (
           drawerItemStyle: { height: 0 },
         }}
       />
+
+      {/* ⚙️ Admin access (admin + creator only) */}
+      {(userRole === "admin" || userRole === "creator") && (
+        <>
+          <Drawer.Screen
+            name="Admin Notifications"
+            component={AdminNotificationScreen}
+            options={{
+              title: "Admin Notifications",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons
+                  name="notifications-circle-outline"
+                  size={size}
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="Admin Fixtures"
+            component={AdminFixturesScreen}
+            options={{
+              title: "Admin Fixtures",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="calendar-outline" size={size} color={color} />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="Admin Tables"
+            component={AdminTablesScreen}
+            options={{
+              title: "Admin Tables",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons
+                  name="stats-chart-outline"
+                  size={size}
+                  color={color}
+                />
+              ),
+            }}
+          />
+        </>
+      )}
+
+      {/* 👑 Creator only */}
+      {userRole === "creator" && (
         <Drawer.Screen
-          name="Admin Notifications"
-          component={AdminNotificationScreen}
+          name="Admin Users"
+          component={AdminUsersScreen}
           options={{
-            title: "Notifications Admin",
+            title: "Admin Utilisateurs",
             headerStyle: { backgroundColor: "#1077a7" },
             headerTintColor: "#fff",
             drawerIcon: ({ color, size }) => (
-              <Ionicons name="megaphone-outline" size={size} color={color} />
+              <Ionicons
+                name="people-circle-outline"
+                size={size}
+                color={color}
+              />
             ),
           }}
         />
-        <Drawer.Screen
-          name="Admin Fixtures"
-          component={AdminFixturesScreen}
-          options={{
-            title: "Admin Fixtures",
-            headerStyle: { backgroundColor: "#1077a7" },
-            headerTintColor: "#fff",
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="megaphone-outline" size={size} color={color} />
-            ),
-          }}
-        />
-        <Drawer.Screen
-          name="Admin Tablees"
-          component={AdminTablesScreen}
-          options={{
-            title: "Admin Tables",
-            headerStyle: { backgroundColor: "#1077a7" },
-            headerTintColor: "#fff",
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="megaphone-outline" size={size} color={color} />
-            ),
-          }}
-        />
+      )}
     </Drawer.Navigator>
   );
 }
 
 async function registerForPushNotificationsAsync() {
   if (!Device.isDevice) {
-    console.log("⚠️ Push notifications only work on physical devices.");
+    Alert.alert("Erreur", "Les notifications push ne fonctionnent que sur un vrai appareil.");
     return null;
   }
 
@@ -475,28 +541,38 @@ async function registerForPushNotificationsAsync() {
   }
 
   if (finalStatus !== "granted") {
-    console.log("🚫 Notification permission not granted.");
+    Alert.alert("Permission refusée", "Activez les notifications dans les paramètres du téléphone.");
     return null;
   }
 
-  const { data: token } = await Notifications.getExpoPushTokenAsync({
-    projectId: "13865688-d0a4-4e46-897f-955163af129d", // ⚠️ Add this line
-  });
-
-  if (!token) {
-    console.log("❌ No token received from Expo.");
-    return null;
-  }
-
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
+  try {
+    const { data: token } = await Notifications.getExpoPushTokenAsync({
+      projectId: "13865688-d0a4-4e46-897f-955163af129d",
     });
-  }
 
-  return token;
+    if (!token) {
+      console.log("❌ Aucun token reçu depuis Expo.");
+      Alert.alert("Erreur", "Impossible d’obtenir le token de notification.");
+      return null;
+    }
+
+    console.log("✅ Token obtenu:", token);
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+      });
+    }
+
+    return token;
+  } catch (err) {
+    console.error("Erreur en obtenant le token:", err);
+    Alert.alert("Erreur", "Une erreur s’est produite en configurant les notifications.");
+    return null;
+  }
 }
+
 
 
 

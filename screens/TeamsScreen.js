@@ -92,12 +92,14 @@ const styles = StyleSheet.create({
   teamCard: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8fcffff",
     marginVertical: 12,
     marginHorizontal: 8,
     padding: 10,
     borderRadius: 15,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   logo: { width: 75, height: 75, marginBottom: 0 },
   teamName: {

@@ -11,7 +11,9 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -329,27 +331,25 @@ export default function AdminTablesScreen() {
 
     return (
       <>
-        <View style={{ marginBottom: 10 }}>
-          <Text style={styles.inputLabel}>Group ID</Text>
-          <TextInput style={styles.input} value={selectedItem.id} editable={false} />
-        </View>
+        <Text style={styles.inputLabel}>ID du groupe</Text>
+        <TextInput style={styles.input} value={selectedItem.id} editable={false} />
 
-        <View style={{ marginBottom: 10 }}>
-          <Text style={styles.inputLabel}>Group name</Text>
-          <TextInput
-            style={styles.input}
-            value={selectedItem.group ?? ""}
-            onChangeText={(v) => setSelectedItem((s) => ({ ...s, group: v }))}
-          />
-        </View>
+        <Text style={styles.inputLabel}>Nom du groupe</Text>
+        <TextInput
+          style={styles.input}
+          value={selectedItem.group ?? ""}
+          onChangeText={(v) => setSelectedItem((s) => ({ ...s, group: v }))}
+        />
 
-        <Text style={{ fontWeight: "700", marginBottom: 8 }}>Teams (exactly 4)</Text>
+        <Text style={{ fontWeight: "700", marginBottom: 8 }}>Équipes (exactement 4)</Text>
+
         {selectedItem.teams?.map((t, idx) => (
           <View key={idx} style={{ marginBottom: 8, borderWidth: 1, borderColor: "#eee", padding: 8, borderRadius: 8 }}>
             <Text style={{ fontWeight: "600", marginBottom: 6 }}>#{idx + 1}</Text>
+            <Text style={styles.inputLabel}>Nom de l’équipe</Text>
             <TextInput
               style={styles.input}
-              placeholder="Team name"
+              placeholder="Nom de l’équipe"
               value={String(t.team ?? "")}
               onChangeText={(v) => {
                 const updated = [...selectedItem.teams];
@@ -357,102 +357,20 @@ export default function AdminTablesScreen() {
                 setSelectedItem((s) => ({ ...s, teams: updated }));
               }}
             />
+
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
-              <TextInput
-                style={[styles.input, { width: "48%" }]}
-                placeholder="Pts"
-                keyboardType="numeric"
-                value={String(t.pts ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].pts = Number(v || 0);
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
-              <TextInput
-                style={[styles.input, { width: "48%" }]}
-                placeholder="MP"
-                keyboardType="numeric"
-                value={String(t.mp ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].mp = Number(v || 0);
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
-
-              <TextInput
-                style={[styles.input, { width: "30%" }]}
-                placeholder="W"
-                keyboardType="numeric"
-                value={String(t.w ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].w = Number(v || 0);
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
-              <TextInput
-                style={[styles.input, { width: "30%" }]}
-                placeholder="D"
-                keyboardType="numeric"
-                value={String(t.d ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].d = Number(v || 0);
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
-              <TextInput
-                style={[styles.input, { width: "30%" }]}
-                placeholder="L"
-                keyboardType="numeric"
-                value={String(t.l ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].l = Number(v || 0);
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
-
-              <TextInput
-                style={[styles.input, { width: "48%" }]}
-                placeholder="GF"
-                keyboardType="numeric"
-                value={String(t.gf ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].gf = Number(v || 0);
-                  updated[idx].gd = updated[idx].gf - (updated[idx].ga ?? 0);
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
-              <TextInput
-                style={[styles.input, { width: "48%" }]}
-                placeholder="GA"
-                keyboardType="numeric"
-                value={String(t.ga ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].ga = Number(v || 0);
-                  updated[idx].gd = (updated[idx].gf ?? 0) - updated[idx].ga;
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
-              <TextInput
-                style={[styles.input, { width: "48%", marginTop: 6 }]}
-                placeholder="GD"
-                keyboardType="numeric"
-                value={String(t.gd ?? 0)}
-                onChangeText={(v) => {
-                  const updated = [...selectedItem.teams];
-                  updated[idx].gd = Number(v || 0);
-                  setSelectedItem((s) => ({ ...s, teams: updated }));
-                }}
-              />
+              <TextInput style={[styles.input, { width: "48%" }]} placeholder="Pts" />
+              <TextInput style={[styles.input, { width: "48%" }]} placeholder="MJ" />
+              <TextInput style={[styles.input, { width: "30%" }]} placeholder="G" />
+              <TextInput style={[styles.input, { width: "30%" }]} placeholder="N" />
+              <TextInput style={[styles.input, { width: "30%" }]} placeholder="P" />
+              <TextInput style={[styles.input, { width: "48%" }]} placeholder="BP" />
+              <TextInput style={[styles.input, { width: "48%" }]} placeholder="BC" />
+              <TextInput style={[styles.input, { width: "48%", marginTop: 6 }]} placeholder="Diff" />
             </View>
           </View>
         ))}
+
 
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
           <TouchableOpacity
@@ -501,14 +419,16 @@ export default function AdminTablesScreen() {
     if (!selectedItem) return null;
     return (
       <>
-        <Text style={styles.inputLabel}>Player</Text>
+
+        <Text style={styles.inputLabel}>Joueur</Text>
         <TextInput style={styles.input} value={String(selectedItem.player ?? "")} onChangeText={(v) => setSelectedItem((s) => ({ ...s, player: v }))} />
 
-        <Text style={styles.inputLabel}>Team</Text>
+        <Text style={styles.inputLabel}>Équipe</Text>
         <TextInput style={styles.input} value={String(selectedItem.team ?? "")} onChangeText={(v) => setSelectedItem((s) => ({ ...s, team: v }))} />
 
-        <Text style={styles.inputLabel}>Goals</Text>
+        <Text style={styles.inputLabel}>Buts</Text>
         <TextInput style={styles.input} value={String(selectedItem.goals ?? 0)} keyboardType="numeric" onChangeText={(v) => setSelectedItem((s) => ({ ...s, goals: Number(v || 0) }))} />
+
       </>
     );
   };
@@ -517,14 +437,16 @@ export default function AdminTablesScreen() {
     if (!selectedItem) return null;
     return (
       <>
-        <Text style={styles.inputLabel}>Player</Text>
+
+        <Text style={styles.inputLabel}>Joueur</Text>
         <TextInput style={styles.input} value={String(selectedItem.player ?? "")} onChangeText={(v) => setSelectedItem((s) => ({ ...s, player: v }))} />
 
-        <Text style={styles.inputLabel}>Team</Text>
+        <Text style={styles.inputLabel}>Équipe</Text>
         <TextInput style={styles.input} value={String(selectedItem.team ?? "")} onChangeText={(v) => setSelectedItem((s) => ({ ...s, team: v }))} />
 
-        <Text style={styles.inputLabel}>Assists</Text>
+        <Text style={styles.inputLabel}>Passes décisives</Text>
         <TextInput style={styles.input} value={String(selectedItem.assists ?? 0)} keyboardType="numeric" onChangeText={(v) => setSelectedItem((s) => ({ ...s, assists: Number(v || 0) }))} />
+
       </>
     );
   };
@@ -542,7 +464,6 @@ export default function AdminTablesScreen() {
 
   return (
     <VirtualizedList>
-      <Text style={styles.title}>⚙️ Admin Tables</Text>
 
       <TouchableOpacity
         style={styles.button}
@@ -560,70 +481,96 @@ export default function AdminTablesScreen() {
 
       {/* Modal for editing */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalBox}>
-            <ScrollView>
-              <Text style={styles.modalTitle}>Modifier — {collectionKey}</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalBox}>
+              <ScrollView keyboardShouldPersistTaps="handled">
+                <Text style={styles.modalTitle}>Modifier — {collectionKey}</Text>
 
-              {collectionKey === "poules" && renderPoulesEditor()}
-              {collectionKey === "scorers" && renderScorerEditor()}
-              {collectionKey === "assists" && renderAssistEditor()}
+                {collectionKey === "poules" && renderPoulesEditor()}
+                {collectionKey === "scorers" && renderScorerEditor()}
+                {collectionKey === "assists" && renderAssistEditor()}
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: "#ccc" }]}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text>Annuler</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: "#1077a7ff" }]}
-                  onPress={saveChanges}
-                >
-                  <Text style={{ color: "#fff" }}>Enregistrer</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: "#ccc" }]}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text>Annuler</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: "#1077a7ff" }]}
+                    onPress={saveChanges}
+                  >
+                    <Text style={{ color: "#fff" }}>Enregistrer</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
+
     </VirtualizedList>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "bold", color: "#1077a7ff", marginBottom: 20, textAlign: "center" },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1077a7ff",
+    marginBottom: 20,
+    marginTop: 20,
+    textAlign: "center",
+  },
   button: {
     backgroundColor: "#1077a7ff",
     paddingVertical: 12,
     borderRadius: 25,
     alignItems: "center",
-    marginBottom: 25,
+    marginTop: 20,
+    marginBottom: 20,
+    marginHorizontal: 50,
   },
   buttonText: { color: "#fff", fontWeight: "bold" },
   section: { marginBottom: 25 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10, color: "#1E293B" },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#1077a7ff",
+    marginHorizontal: 20
+  },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ebf5fcff",
     padding: 15,
     borderRadius: 12,
     marginBottom: 8,
+    marginHorizontal: 20,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 3,
-    elevation: 2,
+    elevation: 3,
+    borderWidth: 0.5,
+    borderColor: "#ddd",
   },
   cardTitle: { fontSize: 16, fontWeight: "bold", color: "#1E293B" },
   cardSubtitle: { color: "#475569", marginTop: 4 },
   smallBtn: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#ddd",
     marginLeft: 6,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 10,
+    marginHorizontal: 20,
   },
 
   // Modal styles
@@ -658,7 +605,7 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     minWidth: 100,
     alignItems: "center",
   },
