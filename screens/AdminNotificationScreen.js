@@ -30,13 +30,13 @@ export default function AdminNotificationScreen() {
 
   const typeData = {
     fixture: {
-      title: "📅 Update Match",
-      icon: "calendar-outline",
+      title: "⚽️ Match",
+      icon: "football-outline",
       target: "Matchs",
     },
     schedule: {
-      title: "🕒 Update Programme",
-      icon: "time-outline",
+      title: "📅 Calendrier",
+      icon: "calendar-outline",
       target: "Programme",
     },
     info: {
@@ -167,8 +167,8 @@ export default function AdminNotificationScreen() {
         onValueChange={setType}
         style={{ marginVertical: 10 }}
       >
-        <Picker.Item label="📅 Update Match" value="fixture" />
-        <Picker.Item label="🕒 Update Programme" value="schedule" />
+        <Picker.Item label="⚽️ Match" value="fixture" />
+        <Picker.Item label="📅 Calendrier" value="schedule" />
         <Picker.Item label="ℹ️ Information" value="info" />
       </Picker>
 

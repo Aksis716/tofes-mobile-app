@@ -473,14 +473,14 @@ const TopRightIcons = ({ navigation }: any) => (
             }}
           />
           <Drawer.Screen
-            name="Admin Fixtures"
+            name="Admin Matchs"
             component={AdminFixturesScreen}
             options={{
-              title: "Admin Fixtures",
+              title: "Admin Matchs",
               headerStyle: { backgroundColor: "#1077a7" },
               headerTintColor: "#fff",
               drawerIcon: ({ color, size }) => (
-                <Ionicons name="calendar-outline" size={size} color={color} />
+                <Ionicons name="football-outline" size={size} color={color} />
               ),
             }}
           />
