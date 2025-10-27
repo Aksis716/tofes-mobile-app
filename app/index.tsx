@@ -546,9 +546,7 @@ async function registerForPushNotificationsAsync() {
   }
 
   try {
-    const { data: token } = await Notifications.getExpoPushTokenAsync({
-      projectId: "13865688-d0a4-4e46-897f-955163af129d",
-    });
+    const { data: token } = await Notifications.getExpoPushTokenAsync();
 
     if (!token) {
       console.log("❌ Aucun token reçu depuis Expo.");
