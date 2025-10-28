@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { db } from '../firebaseConfig';
@@ -20,35 +20,32 @@ export default function FixturesScreen() {
     'Finale'
   ];
 
-  // ✅ Fetch fixtures with proper date/time parsing
+  // ✅ Real-time Firestore listener for fixtures
   useEffect(() => {
-    const fetchFixtures = async () => {
-      try {
-        const q = query(collection(db, 'fixtures'), orderBy('date', 'asc'));
-        const snapshot = await getDocs(q);
+    const q = query(collection(db, 'fixtures'), orderBy('date', 'asc'));
 
-        const fetched = snapshot.docs.map(doc => {
-          const data = doc.data();
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => {
+        const data = doc.data();
 
-          // Handle Firestore Timestamp or ISO string
-          let dateObj = null;
-          if (data?.date && typeof data.date === 'object' && data.date.seconds) {
-            dateObj = new Date(data.date.seconds * 1000);
-          } else if (data?.date) {
-            const parsed = new Date(data.date);
-            if (!isNaN(parsed.getTime())) dateObj = parsed;
-          }
+        // Handle Firestore Timestamp or ISO string
+        let dateObj = null;
+        if (data?.date && typeof data.date === 'object' && data.date.seconds) {
+          dateObj = new Date(data.date.seconds * 1000);
+        } else if (data?.date) {
+          const parsed = new Date(data.date);
+          if (!isNaN(parsed.getTime())) dateObj = parsed;
+        }
 
-          return { id: doc.id, ...data, _dateObj: dateObj };
-        });
+        return { id: doc.id, ...data, _dateObj: dateObj };
+      });
 
-        setFixtures(fetched);
-      } catch (error) {
-        console.error('Error fetching fixtures:', error);
-      }
-    };
+      setFixtures(fetched);
+    }, (error) => {
+      console.error('Error fetching fixtures:', error);
+    });
 
-    fetchFixtures();
+    return () => unsubscribe();
   }, []);
 
   // ✅ Sort chronologically
@@ -96,7 +93,6 @@ export default function FixturesScreen() {
 
   // ✅ Navigate to match screen
   const handlePressMatch = (match) => {
-    // Remove _dateObj before sending to navigation
     const { _dateObj, ...serializableMatch } = match;
     navigation.navigate('Détails du Match', {
       matchId: match.id,
@@ -104,15 +100,11 @@ export default function FixturesScreen() {
     });
   };
 
-  // ✅ Format date/time for display
+  // ✅ Format date/time
   const formatDateTime = (match) => {
     const d = match._dateObj;
-    const dateText = d
-      ? d.toLocaleDateString()
-      : match.date || 'Date à confirmer';
-    const timeText = d
-      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : match.time || 'Heure à confirmer';
+    const dateText = d ? d.toLocaleDateString() : match.date || 'Date à confirmer';
+    const timeText = d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : match.time || 'Heure à confirmer';
     return `${dateText} | ${timeText}`;
   };
 
@@ -148,8 +140,11 @@ export default function FixturesScreen() {
           </View>
 
           <View style={styles.expandedContainer}>
-            <Text style={styles.expandedText}>🏟️ Lieu : {nextMatch.location || 'Non spécifié'}</Text>
+            <Text style={styles.expandedText}>⚔️ Phase : {nextMatch.phase || 'À confirmer'}</Text>
+            <Text style={styles.expandedText}>👨‍🏫 Coach {nextMatch.team1 || '1'} : {nextMatch.coach1 || 'À confirmer'}</Text>
+            <Text style={styles.expandedText}>👨‍🏫 Coach {nextMatch.team2 || '2'} : {nextMatch.coach2 || 'À confirmer'}</Text>
             <Text style={styles.expandedText}>⚖️ Arbitre : {nextMatch.arbitre || 'À confirmer'}</Text>
+            <Text style={styles.expandedText}>🏟️ Lieu : {nextMatch.location || 'Terrain Football Base Aérienne 101'}</Text>
 
             <TouchableOpacity
               style={styles.detailsButton}
@@ -178,7 +173,7 @@ export default function FixturesScreen() {
                 <View style={styles.matchRow}>
                   <Image source={require('../assets/images/teams/TeamLogo.png')} style={styles.teamLogo} />
                   <Text style={styles.teamName}>{item.team1}</Text>
-                  <Text style={styles.vs}>vs</Text>
+                  <Text style={styles.vs}>{item.score1}    -    {item.score2}</Text>
                   <Text style={styles.teamName}>{item.team2}</Text>
                   <Image source={require('../assets/images/teams/TeamLogo.png')} style={styles.teamLogo} />
                 </View>
@@ -254,7 +249,7 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     alignItems: "center",
   },
-  expandedText: { fontSize: 16, color: "#333", marginVertical: 10 },
+  expandedText: { fontSize: 16, color: "#333", marginBottom: 15 },
   detailsButton: {
     marginTop: 10,
     backgroundColor: "#1077a7ff",

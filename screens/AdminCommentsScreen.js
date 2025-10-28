@@ -132,7 +132,7 @@ export default function AdminCommentsScreen() {
   // 🔹 Determine background color by phase
   const getPhaseColor = (phase) => {
     const p = (phase || "").toLowerCase();
-    if (p.includes("groupe")) return "#f9fcff";
+    if (p.includes("groupe")) return "#aad5ffff";
     if (p.includes("quart")) return "#fef8f9";
     if (p.includes("demi")) return "#f9fef8";
     if (p.includes("finale")) return "#fff9f3";
@@ -279,7 +279,7 @@ export default function AdminCommentsScreen() {
 
 // 🧱 Styles
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 10 },
+  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 10 },
 
   searchInput: {
     borderWidth: 1,
@@ -298,11 +298,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e4e9ec",
-    borderRadius: 10,
+    borderColor: "#b5e3ffff",
+    borderRadius: 18,
     padding: 10,
     marginBottom: 10,
-    elevation: 2,
+    elevation: 3,
   },
 
   infoBox: { flex: 1 },

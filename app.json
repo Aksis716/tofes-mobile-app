@@ -19,7 +19,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.aksis716.tofes"
+      "package": "com.aksis716.tofes",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",

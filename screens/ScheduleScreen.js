@@ -1,5 +1,5 @@
 // screens/ScheduleScreen.js
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,49 +17,36 @@ export default function ScheduleScreen() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let mounted = true;
+    const q = query(collection(db, "fixtures"), orderBy("date", "asc"));
 
-    async function fetchFixtures() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const q = query(collection(db, "fixtures"), orderBy("date", "asc"));
-        const snapshot = await getDocs(q);
-
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
         const fetched = snapshot.docs.map((d) => {
           const data = d.data();
-          // Support Firestore Timestamp or ISO string
           let dateObj = null;
           if (data?.date && typeof data.date === "object" && data.date.seconds) {
             dateObj = new Date(data.date.seconds * 1000);
           } else if (data?.date) {
-            // try parse ISO string or other string formats
             const parsed = new Date(data.date);
             if (!isNaN(parsed.getTime())) dateObj = parsed;
           }
-          return {
-            id: d.id,
-            ...data,
-            _dateObj: dateObj,
-          };
+          return { id: d.id, ...data, _dateObj: dateObj };
         });
 
-        if (mounted) {
-          setFixtures(fetched);
-        }
-      } catch (e) {
-        console.error("Error fetching fixtures:", e);
-        if (mounted) setError(String(e));
-      } finally {
-        if (mounted) setLoading(false);
+        setFixtures(fetched);
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        console.error("Error listening to fixtures:", err);
+        setError(String(err));
+        setLoading(false);
       }
-    }
+    );
 
-    fetchFixtures();
-    return () => {
-      mounted = false;
-    };
+    // cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
@@ -93,10 +80,10 @@ export default function ScheduleScreen() {
 
       {fixtures.map((match) => {
         const d = match._dateObj;
-        const dateText = d ? d.toLocaleDateString() : (match.date || "Date à définir");
+        const dateText = d ? d.toLocaleDateString() : match.date || "Date à définir";
         const timeText = d
           ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          : (match.time || (match.hour ? match.hour : "TBD"));
+          : match.time || match.hour || "TBD";
 
         const phase = match.phase || "Phase inconnue";
         const phaseStyle =
@@ -133,11 +120,11 @@ export default function ScheduleScreen() {
               <Text style={styles.vs}>vs</Text>
 
               <View style={styles.team}>
+                <Text style={styles.teamName}>{match.team2 || "Team 2"}</Text>
                 <Image
                   source={require("../assets/images/teams/TeamLogo.png")}
                   style={styles.teamLogo}
                 />
-                <Text style={styles.teamName}>{match.team2 || "Team 2"}</Text>
               </View>
             </View>
           </View>
@@ -192,7 +179,6 @@ const styles = StyleSheet.create({
   semiPhase: { backgroundColor: "#f5a623" },
   finalPhase: { backgroundColor: "#d0021b" },
   defaultPhase: { backgroundColor: "#4d6145ff" },
-
   teamsContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -202,7 +188,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     paddingHorizontal: 20,
   },
-  team: { alignItems: "center", width: 110 },
+  team: { flexDirection: "row", alignItems: "center", justifyContent: "space-evenly", width: 110 },
   teamLogo: { width: 50, height: 50, resizeMode: "contain", marginBottom: -5 },
   teamName: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },
   vs: { fontWeight: "bold", color: "#1077a7ff", fontSize: 16 },

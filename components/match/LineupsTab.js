@@ -134,7 +134,7 @@ export default function LineupsTab(props) {
         {team2Layout.map((p, i) => renderPlayer(p, i, "#a71010", true))}
       </View>
 
-      <View style={{ width: pitchWidth, alignItems: "center", marginTop: 8 }}>
+      <View style={{ width: pitchWidth, alignItems: "center", marginTop: 8, marginBottom: 20 }}>
         <Text style={styles.coachBottomText}>👨‍🏫 Coach: {coach2}</Text>
       </View>
     </>

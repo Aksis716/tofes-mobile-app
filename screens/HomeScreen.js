@@ -1,82 +1,138 @@
-import { format } from 'date-fns';
-import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { db } from "../firebaseConfig"; // make sure path is correct
 
 export default function HomeScreen({ navigation }) {
-
-  const nextMatchDate = new Date('2025-10-28T07:45:00'); // Change this to your next match date
-  const [countdown, setCountdown] = useState('');
+  const [nextMatch, setNextMatch] = useState(null);
+  const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
+    const q = query(collection(db, "fixtures"), orderBy("date", "asc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const matches = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // Filter matches with a future date
+      const now = new Date();
+      const upcomingMatches = matches.filter((m) => {
+        const matchDate = m.date?.toDate ? m.date.toDate() : new Date(m.date);
+        return matchDate > now;
+      });
+
+      // Get the next one
+      if (upcomingMatches.length > 0) {
+        const next = upcomingMatches[0];
+        setNextMatch(next);
+      } else {
+        setNextMatch(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Countdown logic
+  useEffect(() => {
+    if (!nextMatch) return;
+
+    const matchDate = nextMatch.date?.toDate
+      ? nextMatch.date.toDate()
+      : new Date(nextMatch.date);
+
     const interval = setInterval(() => {
-      const diff = nextMatchDate - new Date();
+      const diff = matchDate - new Date();
       if (diff <= 0) {
-        setCountdown('Kickoff!');
+        setCountdown("Coup d’envoi !");
         clearInterval(interval);
         return;
       }
-      const hours = Math.floor(diff / (1000 * 60 * 60));
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
-      setCountdown(`${hours}h ${minutes}m ${seconds}s`);
+
+      setCountdown(`${days}j ${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [nextMatch]);
 
   return (
-
     <ScrollView style={styles.container}>
+      <Text style={styles.header}>
+        Tournoi de Football des Escadrons et Services
+      </Text>
 
-      <Text style={styles.header}>Tournoi de Football des Escadrons et Services</Text>
-
-      <Text style={styles.title}>4ème Edition - Décembre 2025</Text>
+      <Text style={styles.title}>4ème Édition - Décembre 2025</Text>
 
       <View style={styles.midImage}>
         <Image
-          source={require('../assets/images/Tournoi.png')}  // relative path
+          source={require("../assets/images/Tournoi.png")}
           style={styles.image}
-          resizeMode="contain"  // or "cover", "stretch", etc.
+          resizeMode="contain"
         />
       </View>
 
       <View style={styles.paragraph}>
-        <Text style={styles.text}>Le sport constitue un élément important de la vie quotidienne des militaires. Les activités sportives,
-          en particulier celles qui se font en équipe, permettent de développer, renforcer et maintenir un esprit de cohésion et de
-          compétitivité saine au sein de nos Forces Armées.</Text>
+        <Text style={styles.text}>
+          Le sport constitue un élément important de la vie quotidienne des
+          militaires. Les activités sportives, en particulier celles qui se font
+          en équipe, permettent de développer, renforcer et maintenir un esprit
+          de cohésion et de compétitivité saine au sein de nos Forces Armées.
+        </Text>
 
-        <Text style={styles.text}>C'est dans cette optique qu'une compétition de football a été initiée au sein de la Base Aérienne 101. Elle
-        oppose les différents Escadrons et Services dans un tournoi en poules suivi d'une phase à élimination directe. </Text>
+        <Text style={styles.text}>
+          C’est dans cette optique qu’une compétition de football a été initiée
+          au sein de la Base Aérienne 101. Elle oppose les différents Escadrons
+          et Services dans un tournoi en poules suivi d’une phase à élimination
+          directe.
+        </Text>
       </View>
 
       <View style={styles.buttonsContainer}>
+        {/* Palmarès Card */}
         <TouchableOpacity
           style={[styles.card, styles.trophiesCard]}
-          onPress={() => navigation.navigate('Palmarès 🏆')}
+          onPress={() => navigation.navigate("Palmarès 🏆")}
         >
           <Text style={styles.cardEmoji}>🏆</Text>
           <Text style={styles.cardTitle}>Palmarès</Text>
           <Text style={styles.cardSubtitle}>Vainqueurs et Distinctions</Text>
         </TouchableOpacity>
 
+        {/* Next Match Card */}
         <TouchableOpacity
           style={[styles.card, styles.nextMatchCard]}
-          onPress={() => navigation.navigate('Matchs')}
+          onPress={() => navigation.navigate("Matchs")}
         >
           <Text style={styles.cardEmoji}>⚽</Text>
           <Text style={styles.cardTitle}>Prochain Match</Text>
-          <Text style={styles.cardSubtitle}>Début: <Text style={styles.countdown}>{countdown}</Text></Text>
-          <Text style={styles.cardDate}>{format(nextMatchDate, 'EEEE d MMM yyyy, HH:mm')}</Text>
+
+          {nextMatch ? (
+            <>
+              <Text style={styles.cardSubtitle}>
+                Début : <Text style={styles.countdown}>{countdown}</Text>
+              </Text>
+              <Text style={styles.cardSubtitle}>
+                {nextMatch.team1} vs {nextMatch.team2}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.cardSubtitle}>Aucun match à venir</Text>
+          )}
         </TouchableOpacity>
       </View>
-
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: "#f9fafb",
     borderWidth: 1,
     borderColor: "#ddd",
@@ -112,7 +168,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   image: {
-    width: 320, // must set width and height!
+    width: 320,
     height: 320,
   },
   midImage: {
@@ -140,6 +196,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 4,
     elevation: 4,
+    width: "45%",
   },
   cardEmoji: {
     fontSize: 20,
@@ -154,6 +211,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#666",
     marginTop: 4,
+    textAlign: "center",
   },
   trophiesCard: {
     borderLeftWidth: 6,

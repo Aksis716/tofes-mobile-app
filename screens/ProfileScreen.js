@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingTop: 60,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
   },
   header: {
     flexDirection: "row",
@@ -298,11 +298,13 @@ const styles = StyleSheet.create({
   },
   infoBox: {
     width: "85%",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f8fcffff",
     borderRadius: 10,
     padding: 20,
     marginBottom: 30,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   label: {
     fontSize: 14,
@@ -320,7 +322,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1077a7",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 18,
     marginBottom: 20,
     gap: 8,
   },
@@ -330,9 +332,9 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: "#d9534f",
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 25,
-    borderRadius: 8,
+    borderRadius: 18,
   },
   logoutText: {
     color: "#fff",

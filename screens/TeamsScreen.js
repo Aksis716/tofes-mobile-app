@@ -81,7 +81,7 @@ export default function TeamsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", paddingTop: 20 },
+  container: { flex: 1, backgroundColor: "#f5f5f5", paddingTop: 20 },
   text: {
     fontSize: 15,
     marginLeft: 15,
@@ -95,8 +95,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fcffff",
     marginVertical: 12,
     marginHorizontal: 8,
-    padding: 10,
-    borderRadius: 15,
+    padding: 8,
+    borderRadius: 30,
     elevation: 2,
     borderWidth: 1,
     borderColor: "#ddd",

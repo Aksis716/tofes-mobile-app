@@ -34,6 +34,9 @@ import TeamDetailsScreen from '../screens/TeamDetailsScreen';
 import TeamsScreen from '../screens/TeamsScreen';
 import WinnersScreen from '../screens/WinnersScreen';
 
+import { LanguageProvider } from "../contexts/LanguageContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
+
 import AdminNotificationScreen from "../screens/AdminNotificationScreen";
 import AuthScreen from '../screens/AuthScreen';
 import NotificationScreen from "../screens/NotificationScreen";
@@ -322,6 +325,8 @@ const TopRightIcons = ({ navigation }: any) => (
 
   
   return (
+    <ThemeProvider>
+      <LanguageProvider>
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawer {...props} />}
       screenOptions={({ navigation }) => ({
@@ -540,6 +545,8 @@ const TopRightIcons = ({ navigation }: any) => (
         />
       )}
     </Drawer.Navigator>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
@@ -579,6 +586,8 @@ async function registerForPushNotificationsAsync() {
       await Notifications.setNotificationChannelAsync("default", {
         name: "default",
         importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C",
       });
     }
 

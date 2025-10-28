@@ -1,34 +1,61 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { Alert, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import React, { useContext } from "react";
+import {
+  Alert,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { LanguageContext } from "../contexts/LanguageContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 
 export default function SettingsScreen() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [language, setLanguage] = useState("Français");
+  const { isDarkMode, toggleTheme } = useContext(ThemeContext);
+  const { language, changeLanguage } = useContext(LanguageContext);
 
+  // Privacy Modal
+  const showPrivacy = () => {
+    Alert.alert(
+      "Confidentialité et Sécurité",
+      "L’utilisation de cette application est réservée aux personnes autorisées. Toutes les informations collectées doivent rester confidentielles et ne doivent être partagées qu’avec les personnes appropriées. Tout abus, partage non autorisé ou comportement inapproprié peut entraîner des sanctions conformément aux règles de l’organisation.",
+      [{ text: "OK" }]
+    );
+  };
+
+  // Language Selector
   const handleLanguageChange = () => {
     Alert.alert(
       "Sélectionner la langue",
-      "Fonctionnalité à rajouter!",
-      [{ text: "OK", onPress: () => {} }],
-      { cancelable: true }
+      "Choisissez la langue de l'application (requiert un redémarrage)",
+      [
+        {
+          text: "Français",
+          onPress: () => changeLanguage("fr"),
+        },
+        {
+          text: "English",
+          onPress: () => changeLanguage("en"),
+        },
+        { text: "Annuler", style: "cancel" },
+      ]
     );
   };
 
-  const handleFavoriteTeam = () => {
-    Alert.alert("Équipe Préférée", "Fonctionnalité à rajouter!");
-  };
-
-  const handlePrivacy = () => {
-    Alert.alert("Confidentialité et Sécurité", "Fonctionnalité à rajouter!");
-  };
-
-  const handleAbout = () => {
-    Alert.alert(
-      "À Propos",
-      "TOFES v1.0\nSystème d'alerte et de suivi du tournoi de football de la BA 101."
-    );
+  // Clear Cache
+  const clearCache = async () => {
+    try {
+      await AsyncStorage.clear();
+      Alert.alert(
+        "Cache vidé",
+        "Toutes les données temporaires ont été supprimées. L'application peut redémarrer."
+      );
+    } catch (e) {
+      console.error("Error clearing cache:", e);
+    }
   };
 
   return (
@@ -43,16 +70,7 @@ export default function SettingsScreen() {
           />
           <Text style={styles.settingText}>Mode Sombre</Text>
         </View>
-        <Switch value={isDarkMode} onValueChange={setIsDarkMode} />
-      </View>
-
-      {/* Notifications */}
-      <View style={styles.settingItem}>
-        <View style={styles.row}>
-          <Ionicons name="notifications-outline" size={22} color="#1077a7ff" />
-          <Text style={styles.settingText}>Notifications</Text>
-        </View>
-        <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
+        <Switch value={isDarkMode} onValueChange={toggleTheme} />
       </View>
 
       {/* Language */}
@@ -61,31 +79,35 @@ export default function SettingsScreen() {
           <Ionicons name="globe-outline" size={22} color="#1077a7ff" />
           <Text style={styles.settingText}>Langue</Text>
         </View>
-        <Text style={{ color: "#6c757d" }}>{language}</Text>
+        <Text style={{ color: "#6c757d" }}>
+          {language === "fr" ? "Français" : "English"}
+        </Text>
       </TouchableOpacity>
 
-      {/* Favorite Team */}
-      <TouchableOpacity style={styles.settingItem} onPress={handleFavoriteTeam}>
-        <View style={styles.row}>
-          <Ionicons name="heart-outline" size={22} color="#1077a7ff" />
-          <Text style={styles.settingText}>Équipe Préférée</Text>
-        </View>
-        <Text style={{ color: "#6c757d" }}>Pas de sélection</Text>
-      </TouchableOpacity>
-
-      {/* Privacy Policy */}
-      <TouchableOpacity style={styles.settingItem} onPress={handlePrivacy}>
+      {/* Privacy */}
+      <TouchableOpacity style={styles.settingItem} onPress={showPrivacy}>
         <View style={styles.row}>
           <Ionicons name="shield-outline" size={22} color="#1077a7ff" />
           <Text style={styles.settingText}>Confidentialité et Sécurité</Text>
         </View>
       </TouchableOpacity>
 
-      {/* About */}
-      <TouchableOpacity style={styles.settingItem} onPress={handleAbout}>
+      {/* App Version */}
+      <View style={styles.settingItem}>
         <View style={styles.row}>
           <Ionicons name="information-circle-outline" size={22} color="#1077a7ff" />
-          <Text style={styles.settingText}>À Propos</Text>
+          <Text style={styles.settingText}>Version de l'application</Text>
+        </View>
+        <Text style={{ color: "#6c757d" }}>
+          {Constants?.expoConfig?.version || "1.0.0"}
+        </Text>
+      </View>
+
+      {/* Clear Cache */}
+      <TouchableOpacity style={styles.settingItem} onPress={clearCache}>
+        <View style={styles.row}>
+          <Ionicons name="trash-outline" size={22} color="#1077a7ff" />
+          <Text style={styles.settingText}>Vider le cache</Text>
         </View>
       </TouchableOpacity>
     </ScrollView>

@@ -95,7 +95,7 @@ export default function TeamDetailsScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 20 },
+  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 20 },
   logo: { width: 150, height: 150, alignSelf: "center", marginBottom: 1, marginTop: -20 },
   teamName: {
     fontSize: 24,

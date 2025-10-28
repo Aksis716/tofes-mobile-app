@@ -85,7 +85,7 @@ export default function MatchScreen({ route }) {
         const minutes = Math.floor((diff / (1000 * 60)) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
         setCountdown(`${days}j ${hours}h ${minutes}m ${seconds}s`);
-      } else if (diff <= 0 && diff > -2 * 60 * 60 * 1000) {
+      } else if (diff <= 0 && diff > -1 * 60 * 60 * 1000) {
         setStatus("live");
         setCountdown("Match en cours !");
       } else {
@@ -132,9 +132,9 @@ export default function MatchScreen({ route }) {
           ) : (
             <>
               <View style={styles.scoreRow}>
-                <Text style={styles.score}>{currentMatch.homeScore ?? "-"}</Text>
+                <Text style={styles.score}>{currentMatch.score1 ?? "0"}</Text>
                 <Text style={styles.vs}> - </Text>
-                <Text style={styles.score}>{currentMatch.awayScore ?? "-"}</Text>
+                <Text style={styles.score}>{currentMatch.score2 ?? "0"}</Text>
               </View>
               {status === "live" && <Text style={[styles.statusBox, { backgroundColor: "#4caf50" }]}>EN COURS</Text>}
               {status === "finished" && <Text style={[styles.statusBox, { backgroundColor: "#f44336" }]}>TERMINÉ</Text>}

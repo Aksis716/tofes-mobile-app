@@ -1,4 +1,4 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
@@ -11,24 +11,33 @@ export default function StandingsScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const poulesSnap = await getDocs(collection(db, "poules"));
-        const scorersSnap = await getDocs(collection(db, "scorers"));
-        const assistsSnap = await getDocs(collection(db, "assists"));
+    setLoading(true);
 
-        setPoules(poulesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        setScorers(scorersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        setAssists(assistsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (err) {
-        console.error("Error fetching standings data:", err);
-      } finally {
-        setLoading(false);
-      }
+    const unsubPoules = onSnapshot(collection(db, "poules"), (snapshot) => {
+      setPoules(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubScorers = onSnapshot(collection(db, "scorers"), (snapshot) => {
+      const sorted = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => (b.goals || 0) - (a.goals || 0));
+      setScorers(sorted);
+    });
+
+    const unsubAssists = onSnapshot(collection(db, "assists"), (snapshot) => {
+      const sorted = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => (b.assists || 0) - (a.assists || 0));
+      setAssists(sorted);
+    });
+
+    setLoading(false);
+
+    return () => {
+      unsubPoules();
+      unsubScorers();
+      unsubAssists();
     };
-
-    fetchData();
   }, []);
 
   const renderHeader = () => (
@@ -51,10 +60,11 @@ export default function StandingsScreen() {
         styles.tableRow,
         index === 0 && styles.topTeam,
         index === 1 && styles.topTeam,
+        index === 2 && styles.top3,
       ]}
     >
       <View style={[styles.cell, { flex: 2, flexDirection: "row", alignItems: "center" }]}>
-        <Image source={require('../assets/images/teams/TeamLogo.png')} style={styles.logo} />
+        <Image source={require("../assets/images/teams/TeamLogo.png")} style={styles.logo} />
         <Text numberOfLines={1} style={styles.teamName}>{item.team}</Text>
       </View>
       <Text style={styles.cell}>{item.pts}</Text>
@@ -72,7 +82,7 @@ export default function StandingsScreen() {
     <View style={styles.tableRow}>
       <Text style={styles.rank}>{index + 1}</Text>
       <Text style={[styles.teamName, { flex: 2 }]}>  {item.player}</Text>
-      <Image source={require('../assets/images/teams/TeamLogo.png')} style={styles.logo} />
+      <Image source={require("../assets/images/teams/TeamLogo.png")} style={styles.logo} />
       <Text style={[styles.teamName, { flex: 1 }]}>{item.team}</Text>
       <Text style={[styles.cell, { flex: 1 }]}>{item.goals} ⚽</Text>
     </View>
@@ -82,14 +92,14 @@ export default function StandingsScreen() {
     <View style={styles.tableRow}>
       <Text style={styles.rank}>{index + 1}</Text>
       <Text style={[styles.teamName, { flex: 2 }]}>  {item.player}</Text>
-      <Image source={require('../assets/images/teams/TeamLogo.png')} style={styles.logo} />
+      <Image source={require("../assets/images/teams/TeamLogo.png")} style={styles.logo} />
       <Text style={[styles.teamName, { flex: 1 }]}>{item.team}</Text>
       <Text style={[styles.cell, { flex: 1 }]}>{item.assists} 🅰️</Text>
     </View>
   );
 
   const getGroup = (groupName) => {
-    const poule = poules.find(p => p.group === groupName);
+    const poule = poules.find((p) => p.group === groupName);
     return poule ? poule.teams : [];
   };
 
@@ -118,7 +128,11 @@ export default function StandingsScreen() {
             data={getGroup(activeTab)}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderTeamRow}
-            ListEmptyComponent={<Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>Aucune équipe pour cette poule.</Text>}
+            ListEmptyComponent={
+              <Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>
+                Aucune équipe pour cette poule.
+              </Text>
+            }
           />
         </>
       )}
@@ -134,7 +148,11 @@ export default function StandingsScreen() {
             data={scorers}
             keyExtractor={(item) => item.id}
             renderItem={renderScorerRow}
-            ListEmptyComponent={<Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>Aucun buteur pour le moment.</Text>}
+            ListEmptyComponent={
+              <Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>
+                Aucun buteur pour le moment.
+              </Text>
+            }
           />
         </>
       )}
@@ -150,7 +168,11 @@ export default function StandingsScreen() {
             data={assists}
             keyExtractor={(item) => item.id}
             renderItem={renderAssistRow}
-            ListEmptyComponent={<Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>Aucun passeur pour le moment.</Text>}
+            ListEmptyComponent={
+              <Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>
+                Aucun passeur pour le moment.
+              </Text>
+            }
           />
         </>
       )}
@@ -220,20 +242,16 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderColor: "#E2E8F0",
-    backgroundColor: "#fff",
+    backgroundColor: "#f8fcffff",
     alignItems: "center",
     borderRadius: 8,
     marginVertical: 2,
     elevation: 1,
   },
   topTeam: { backgroundColor: "#D1FAE5" },
+  top3: { backgroundColor: "#fae7d1ff" },
   cell: { flex: 1, textAlign: "center", color: "#1E293B" },
-  rank: {
-    width: 20,
-    textAlign: "center",
-    fontWeight: "bold",
-    color: "#1E293B",
-  },
+  rank: { width: 20, textAlign: "center", fontWeight: "bold", color: "#1E293B" },
   logo: { width: 24, height: 24, marginHorizontal: 6 },
   teamName: { fontSize: 14, color: "#1E293B" },
   legendContainer: {
