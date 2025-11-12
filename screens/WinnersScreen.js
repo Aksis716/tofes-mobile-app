@@ -1,7 +1,20 @@
 import { default as React, useState } from 'react';
-import { Dimensions, FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+// Responsive scaling helpers
+const wp = percentage => (width * percentage) / 100;
+const hp = percentage => (height * percentage) / 100;
 
 const phases = ['1ère Edition', '2ème Edition', '3ème Edition'];
 
@@ -11,7 +24,7 @@ const winnersData = [
     phase: '3ème Edition',
     year: 'Janvier - Février 2024 ',
     team: 'EMAA',
-    logo: require('../assets/images/teams/TeamLogo.png'),
+    logo: require('../assets/images/teams/EMAA.png'),
     finalist: 'Avions',
     puskas: 'LTN Hassane Zapré',
     bestPlayer: 'LTN Hassane Zapré',
@@ -31,7 +44,7 @@ const winnersData = [
     finalist: 'EMART',
     puskas: 'ASP Souradji',
     bestPlayer: 'SCH Abdoul Hayou Amadou',
-    topScorer: '   SCH Abdoul Hayou Amadou (6 Buts)',
+    topScorer: 'SCH Abdoul Hayou Amadou (6 Buts)',
     ceremonyImages: [
       require('../assets/images/palmares/Edition2A.jpeg'),
       require('../assets/images/palmares/Edition2B.jpeg'),
@@ -57,95 +70,98 @@ const winnersData = [
 ];
 
 export default function PreviousWinnersScreen() {
-    const [selectedPhase, setSelectedPhase] = useState('3ème Edition');
-    const winner = winnersData.filter(r => r.phase === selectedPhase);
+  const [selectedPhase, setSelectedPhase] = useState('3ème Edition');
+  const winner = winnersData.filter(r => r.phase === selectedPhase);
+  const [selectedImage, setSelectedImage] = useState(null);
 
-    const [selectedImage, setSelectedImage] = useState(null);
-
-    const VirtualizedList = ({ children }) => {
-      return (
-        <FlatList
-          data={[]}
-          keyExtractor={() => "key"}
-          renderItem={null}
-          ListHeaderComponent={<>{children}</>}
-        />
-      );
-    };
+  const VirtualizedList = ({ children }) => (
+    <FlatList
+      data={[]}
+      keyExtractor={() => 'key'}
+      renderItem={null}
+      ListHeaderComponent={<>{children}</>}
+    />
+  );
 
   return (
     <VirtualizedList>
-
       {/* Phase Selector */}
       <View style={styles.phaseContainer}>
         {phases.map(phase => (
           <TouchableOpacity
             key={phase}
-            style={[styles.phaseButton, selectedPhase === phase && styles.phaseSelected]}
+            style={[
+              styles.phaseButton,
+              selectedPhase === phase && styles.phaseSelected,
+            ]}
             onPress={() => setSelectedPhase(phase)}
           >
-            <Text style={[styles.phaseText, selectedPhase === phase && styles.phaseTextSelected]}>
+            <Text
+              style={[
+                styles.phaseText,
+                selectedPhase === phase && styles.phaseTextSelected,
+              ]}
+            >
               {phase}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Display the selected phase */}
-
+      {/* Display Selected Phase */}
       <FlatList
         data={winner}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <View style={styles.container2}>
-
+          <View style={styles.cardContainer}>
+            {/* Team Section */}
             <View style={styles.teamSection}>
-            <Image source={item.logo} style={styles.teamLogo} />
+              <Image source={item.logo} style={styles.teamLogo} />
             </View>
 
-            <View style={styles.teamSection2}>
             <Text style={styles.teamName}>{item.team}</Text>
+
+            {/* Info Sections */}
+            <View style={styles.infoBox}>
+              <Text style={styles.infoLabel}>Période :</Text>
+              <Text style={styles.infoValue}>{item.year}</Text>
             </View>
 
-            <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Période :</Text>
-            <Text style={styles.infoValue}>{item.year}</Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.infoLabel}>Vice-Champion :</Text>
+              <Text style={styles.infoValue}>{item.finalist}</Text>
             </View>
 
-            <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Vice-Champion :</Text>
-            <Text style={styles.infoValue}>{item.finalist}</Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.infoLabel}>Meilleur Joueur :</Text>
+              <Text style={styles.infoValue}>{item.bestPlayer}</Text>
             </View>
 
-            <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Meilleur Joueur :</Text>
-            <Text style={styles.infoValue}>{item.bestPlayer}</Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.infoLabel}>Meilleur Buteur :</Text>
+              <Text style={styles.infoValue}>{item.topScorer}</Text>
             </View>
 
-            <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Meilleur Buteur :</Text>
-            <Text style={styles.infoValue}>{item.topScorer}</Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.infoLabel}>Plus Beau But :</Text>
+              <Text style={styles.infoValue}>{item.puskas}</Text>
             </View>
 
-            <View style={styles.infoSection}>
-            <Text style={styles.infoLabel}>Plus Beau But :</Text>
-            <Text style={styles.infoValue}>{item.puskas}</Text>
-            </View>
-
+            {/* Ceremony Images */}
             <FlatList
-            data={item.ceremonyImages}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(img, i) => i.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => setSelectedImage(item)}>
-                <Image source={item} style={styles.ceremonyImage} />
-              </TouchableOpacity>
-            )}
-            style={styles.carousel}
+              data={item.ceremonyImages}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(img, i) => i.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => setSelectedImage(item)}>
+                  <Image source={item} style={styles.ceremonyImage} />
+                </TouchableOpacity>
+              )}
+              style={styles.carousel}
             />
 
-            {/* 🔍 Modal for full-screen image */}
+            {/* Modal for full-screen image */}
             <Modal
               visible={!!selectedImage}
               transparent={true}
@@ -156,146 +172,118 @@ export default function PreviousWinnersScreen() {
                 <TouchableOpacity
                   style={styles.fullImageContainer}
                   activeOpacity={1}
-                  onPress={() => setSelectedImage(null)} // close on tap
+                  onPress={() => setSelectedImage(null)}
                 >
                   <Image source={selectedImage} style={styles.fullImage} />
                 </TouchableOpacity>
               </View>
             </Modal>
-
           </View>
         )}
       />
-
     </VirtualizedList>
-
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 15,
+  phaseContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginVertical: hp(1),
   },
-  container2: {
-    backgroundColor: "#f8fcffff",
-    elevation: 4,
-    borderWidth: 0.5,
-    borderColor: "#ddd",
+  phaseButton: {
+    backgroundColor: '#f8fcffff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    paddingVertical: hp(0.8),
+    paddingHorizontal: wp(3),
     borderRadius: 20,
-    marginHorizontal: 5,
-    paddingVertical: 10,
+    margin: wp(2),
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginVertical: 20,
-    color: "#222",
+  phaseSelected: {
+    backgroundColor: '#1077a7ff',
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    marginHorizontal: 15,
-    marginBottom: 20,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+  phaseText: {
+    fontSize: wp(3),
+    color: '#333',
+    fontWeight: '600',
   },
-  year: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1077a7ff",
-    textAlign: "center",
-    marginBottom: 10,
+  phaseTextSelected: {
+    color: '#fff',
+  },
+  cardContainer: {
+    backgroundColor: '#f8fcffff',
+    borderRadius: 20,
+    borderWidth: 0.5,
+    borderColor: '#ddd',
+    marginHorizontal: wp(3),
+    marginVertical: hp(1),
+    paddingVertical: hp(2),
+    alignItems: 'center',
+    elevation: 4,
   },
   teamSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  teamSection2: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: hp(1),
   },
   teamLogo: {
-    width: 150,
-    height: 150,
-    resizeMode: "contain",
-    marginTop: 20,
+    width: wp(40),
+    height: wp(40),
+    resizeMode: 'contain',
+    marginVertical: hp(1),
   },
   teamName: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#1077a7ff",
+    fontSize: wp(6),
+    fontWeight: '700',
+    color: '#1077a7ff',
+    textAlign: 'center',
+    marginBottom: hp(2),
   },
-  infoSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 5,
-    paddingHorizontal: 20,
+  infoBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: wp(85),
+    marginVertical: hp(0.5),
   },
   infoLabel: {
-    fontSize: 16,
-    color: "#555",
+    fontSize: wp(3.8),
+    color: '#555',
   },
   infoValue: {
-    fontSize: 16,
-    color: "#1077a7ff",
-    fontWeight: "600",
+    fontSize: wp(3.8),
+    color: '#1077a7ff',
+    fontWeight: '600',
+    textAlign: 'right',
+    flexShrink: 1,
   },
   carousel: {
-    marginTop: 15,
+    marginTop: hp(1.5),
   },
   ceremonyImage: {
-    width: width * 0.7,
-    height: 200,
+    width: wp(70),
+    height: hp(25),
     borderRadius: 10,
-    resizeMode: "cover",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginVertical: 10,
-    marginHorizontal: 10,
+    resizeMode: 'cover',
+    marginHorizontal: wp(2),
   },
   modalBackground: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.9)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fullImageContainer: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fullImage: {
-    width: "90%",
-    height: "70%",
+    width: '90%',
+    height: '70%',
     borderRadius: 10,
-    resizeMode: "contain",
+    resizeMode: 'contain',
   },
-  phaseContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 10,
-    marginTop: 10,
-    justifyContent: "center",
-  },
-  phaseButton: {
-    backgroundColor: "#f8fcffff",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 8,
-    borderRadius: 20,
-    margin: 10,
-  },
-  phaseSelected: { backgroundColor: "#1077a7ff" },
-  phaseText: { fontSize: 12, color: "#333", fontWeight: "600" },
-  phaseTextSelected: { color: "#fff" },
 });

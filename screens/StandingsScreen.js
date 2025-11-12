@@ -1,20 +1,51 @@
+import { Picker } from "@react-native-picker/picker";
 import { collection, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { db } from "../firebaseConfig";
 
 export default function StandingsScreen() {
-  const [activeTab, setActiveTab] = useState("Poule A");
+  const [activeTab, setActiveTab] = useState("Poules");
+  const [selectedPoule, setSelectedPoule] = useState("Poule A");
   const [poules, setPoules] = useState([]);
   const [scorers, setScorers] = useState([]);
   const [assists, setAssists] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const teamLogos = {
+    Avions: require("../assets/images/teams/AVIONS.png"),
+    EDA: require("../assets/images/teams/EDA.png"),
+    CRDA: require("../assets/images/teams/CRDA.png"),
+    CFA: require("../assets/images/teams/CFA.png"),
+    Helicos: require("../assets/images/teams/Helicos.png"),
+    EMAA: require("../assets/images/teams/EMAA.png"),
+    FUAES: require("../assets/images/teams/FUAES.png"),
+    Drones: require("../assets/images/teams/Drones.png"),
+    OSA: require("../assets/images/teams/OSA.png"),
+    MGX: require("../assets/images/teams/MGX.png"),
+    EMART: require("../assets/images/teams/EMART.png"),
+    // fallback if team not found
+    default: require("../assets/images/teams/TeamLogo.png"),
+  };
+
   useEffect(() => {
     setLoading(true);
 
     const unsubPoules = onSnapshot(collection(db, "poules"), (snapshot) => {
-      setPoules(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      // sort each poule’s teams by points
+      data.forEach((p) => {
+        p.teams = p.teams?.sort((a, b) => (b.pts || 0) - (a.pts || 0)) || [];
+      });
+      setPoules(data);
     });
 
     const unsubScorers = onSnapshot(collection(db, "scorers"), (snapshot) => {
@@ -40,6 +71,11 @@ export default function StandingsScreen() {
     };
   }, []);
 
+  const getGroup = (groupName) => {
+    const poule = poules.find((p) => p.group === groupName);
+    return poule ? poule.teams : [];
+  };
+
   const renderHeader = () => (
     <View style={styles.tableHeader}>
       <Text style={[styles.headerCell, { flex: 2 }]}>Equipe</Text>
@@ -58,14 +94,20 @@ export default function StandingsScreen() {
     <View
       style={[
         styles.tableRow,
-        index === 0 && styles.topTeam,
-        index === 1 && styles.topTeam,
-        index === 2 && styles.top3,
+        index < 2 && styles.topTeam, // first two = qualified
+        index === 2 && styles.maybeQualified, // third = maybe qualified
       ]}
     >
-      <View style={[styles.cell, { flex: 2, flexDirection: "row", alignItems: "center" }]}>
-        <Image source={require("../assets/images/teams/TeamLogo.png")} style={styles.logo} />
-        <Text numberOfLines={1} style={styles.teamName}>{item.team}</Text>
+      <View
+        style={[styles.cell, { flex: 2, flexDirection: "row", alignItems: "center" }]}
+      >
+        <Image
+          source={teamLogos[item.team] || teamLogos.default}
+          style={styles.logo}
+        />
+        <Text numberOfLines={1} style={styles.teamName}>
+          {item.team}
+        </Text>
       </View>
       <Text style={styles.cell}>{item.pts}</Text>
       <Text style={styles.cell}>{item.mp}</Text>
@@ -79,130 +121,239 @@ export default function StandingsScreen() {
   );
 
   const renderScorerRow = ({ item, index }) => (
-    <View style={styles.tableRow}>
+    <View
+      style={[styles.tableRow, index === 0 && styles.topHighlight]}
+    >
       <Text style={styles.rank}>{index + 1}</Text>
-      <Text style={[styles.teamName, { flex: 2 }]}>  {item.player}</Text>
-      <Image source={require("../assets/images/teams/TeamLogo.png")} style={styles.logo} />
+      <Text style={[styles.teamName, { flex: 2 }]}> {item.player}</Text>
+      <Image
+        source={teamLogos[item.team] || teamLogos.default}
+        style={styles.logo}
+      />
       <Text style={[styles.teamName, { flex: 1 }]}>{item.team}</Text>
       <Text style={[styles.cell, { flex: 1 }]}>{item.goals} ⚽</Text>
     </View>
   );
 
   const renderAssistRow = ({ item, index }) => (
-    <View style={styles.tableRow}>
+    <View
+      style={[styles.tableRow, index === 0 && styles.topHighlight]}
+    >
       <Text style={styles.rank}>{index + 1}</Text>
-      <Text style={[styles.teamName, { flex: 2 }]}>  {item.player}</Text>
-      <Image source={require("../assets/images/teams/TeamLogo.png")} style={styles.logo} />
+      <Text style={[styles.teamName, { flex: 2 }]}> {item.player}</Text>
+      <Image
+        source={teamLogos[item.team] || teamLogos.default}
+        style={styles.logoBracket}
+      />
       <Text style={[styles.teamName, { flex: 1 }]}>{item.team}</Text>
       <Text style={[styles.cell, { flex: 1 }]}>{item.assists} 🅰️</Text>
     </View>
   );
 
-  const getGroup = (groupName) => {
-    const poule = poules.find((p) => p.group === groupName);
-    return poule ? poule.teams : [];
+  // dummy bracket data
+  const brackets = {
+    quarts: [
+      { team1: "1er Poule C", score1: 2, team2: "Meilleur 3e", score2: 1 },
+      { team1: "2e Poule A", score1: 1, team2: "1er Poule B", score2: 2 },
+      { team1: "2e Poule C", score1: 1, team2: "2e Poule B", score2: 0 },
+      { team1: "Meilleur 3e", score1: 0, team2: "1er Poule A", score2: 2 },
+    ],
+    demis: [
+      { team1: "Vainqueur QF 1", score1: 2, team2: "Vainqueur QF 2", score2: 1 },
+      { team1: "Vainqueur QF 3", score1: 0, team2: "Vainqueur QF 4", score2: 3 },
+    ],
+    finale: [{ team1: "Vainqueur DF 1", score1: 1, team2: "Vainqueur DF 2", score2: 2 }],
   };
+
+  const renderBracket = (round, matches) => (
+    <View style={styles.roundContainer}>
+      <Text style={styles.roundTitle}>{round}</Text>
+      {matches.map((m, idx) => (
+        <View key={idx} style={styles.matchBox}>
+          <Image
+            source={teamLogos[m.team1] || teamLogos.default}
+            style={styles.logoBracket}
+          />
+          <Text style={styles.matchText}>
+            {m.team1} 
+          </Text>
+          <View style={styles.connectorLine} />
+          <Text style={styles.matchText}>
+            {m.team2} 
+          </Text>
+          <Image
+            source={teamLogos[m.team2] || teamLogos.default}
+            style={styles.logoBracket}
+          />
+        </View>
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>
-        {["Poule A", "Poule B", "Poule C", "Buteurs", "Passeurs"].map((tab) => (
+        {["Poules", "Phase Directe", "Buteurs", "Passeurs"].map((tab) => (
           <TouchableOpacity
             key={tab}
             onPress={() => setActiveTab(tab)}
             style={[styles.tabButton, activeTab === tab && styles.activeTab]}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
               {tab}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Content */}
-      {["Poule A", "Poule B", "Poule C"].includes(activeTab) && (
+      {/* Poules */}
+      {activeTab === "Poules" && (
         <>
+          <Picker
+            selectedValue={selectedPoule}
+            style={styles.dropdown}
+            onValueChange={(itemValue) => setSelectedPoule(itemValue)}
+          >
+            <Picker.Item label="Poule A" value="Poule A" />
+            <Picker.Item label="Poule B" value="Poule B" />
+            <Picker.Item label="Poule C" value="Poule C" />
+          </Picker>
+
           {renderHeader()}
           <FlatList
-            data={getGroup(activeTab)}
+            data={getGroup(selectedPoule)}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderTeamRow}
             ListEmptyComponent={
-              <Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>
+              <Text
+                style={{ textAlign: "center", marginTop: 20, color: "#475569" }}
+              >
                 Aucune équipe pour cette poule.
               </Text>
             }
           />
+
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+            <View style={[styles.colorBox, { backgroundColor: "#D1FAE5" }]} />
+            <Text style={styles.legendText}>Équipes qualifiées</Text>
+            </View>
+
+            <View style={styles.legendItem}>
+            <View style={[styles.colorBox, { backgroundColor: "#fae7d1ff" }]} />
+            <Text style={styles.legendText}>
+              Équipe potentiellement qualifiée
+            </Text>
+            </View>
+          </View>
+
+          {["Poules"].includes(activeTab) && (
+            <View style={styles.legendContainer}>
+              {[
+                { label: "Pts", text: " Points" },
+                { label: "MJ", text: " Matchs Joués" },
+                { label: "G", text: " Gagnés" },
+                { label: "N", text: " Nuls" },
+                { label: "P", text: " Perdus" },
+                { label: "BP", text: " Buts Pour" },
+                { label: "BC", text: " Buts Contre" },
+                { label: "DB", text: " Différence de Buts" },
+              ].map((item) => (
+                <View key={item.label} style={styles.legendItem}>
+                  <Text style={styles.legendLabel}>{item.label}</Text>
+                  <Text style={styles.legendText}>{item.text}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
         </>
       )}
 
+      {/* Buteurs */}
       {activeTab === "Buteurs" && (
         <>
           <View style={styles.tableHeader}>
             <Text style={[styles.headerCell, { flex: 2 }]}>Joueur</Text>
-            <Text style={[styles.headerCell, { flex: 1 }]}>Equipe</Text>
+            <Text style={[styles.headerCell, { flex: 1 }]}>Équipe</Text>
             <Text style={[styles.headerCell, { flex: 1 }]}>Buts</Text>
           </View>
           <FlatList
             data={scorers}
             keyExtractor={(item) => item.id}
             renderItem={renderScorerRow}
-            ListEmptyComponent={
-              <Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>
-                Aucun buteur pour le moment.
-              </Text>
-            }
           />
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+            <View style={[styles.colorBox, { backgroundColor: "#D1FAE5" }]} />
+            <Text style={styles.legendText}>Meilleur buteur du tournoi</Text>
+            </View>
+          </View>
         </>
       )}
 
+      {/* Passeurs */}
       {activeTab === "Passeurs" && (
         <>
           <View style={styles.tableHeader}>
             <Text style={[styles.headerCell, { flex: 2 }]}>Joueur</Text>
-            <Text style={[styles.headerCell, { flex: 1 }]}>Equipe</Text>
+            <Text style={[styles.headerCell, { flex: 1 }]}>Équipe</Text>
             <Text style={[styles.headerCell, { flex: 1 }]}>Passes</Text>
           </View>
           <FlatList
             data={assists}
             keyExtractor={(item) => item.id}
             renderItem={renderAssistRow}
-            ListEmptyComponent={
-              <Text style={{ textAlign: "center", marginTop: 20, color: "#475569" }}>
-                Aucun passeur pour le moment.
-              </Text>
-            }
           />
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+            <View style={[styles.colorBox, { backgroundColor: "#D1FAE5" }]} />
+            <Text style={styles.legendText}>Meilleur passeur du tournoi</Text>
+            </View>
+          </View>
         </>
       )}
 
-      {/* Legend */}
-      {["Poule A", "Poule B", "Poule C"].includes(activeTab) && (
-        <View style={styles.legendContainer}>
-          {[
-            { label: "Pts", text: "  Points" },
-            { label: "MJ", text: "  Matchs Joués" },
-            { label: "G", text: "  Gagnés" },
-            { label: "N", text: "  Nuls" },
-            { label: "P", text: "  Perdus" },
-            { label: "BP", text: "  Buts Pour" },
-            { label: "BC", text: "  Buts Contre" },
-            { label: "DB", text: "  Différence de Buts" },
-          ].map((item) => (
-            <View key={item.label} style={styles.legendItem}>
-              <Text style={styles.legendLabel}>{item.label}</Text>
-              <Text style={styles.legendText}>{item.text}</Text>
+      {/* Phase Directe */}
+      {activeTab === "Phase Directe" && (
+        <>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.bracketScroll}
+        >
+          {renderBracket("Quarts de Finale", brackets.quarts)}
+          {renderBracket("Demi-Finales", brackets.demis)}
+          {renderBracket("Finale", brackets.finale)}
+        </ScrollView>
+
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+            <Text style={styles.legendLabel}>QF</Text>
+            <Text style={styles.legendText}>Quart de Finale</Text>
             </View>
-          ))}
-        </View>
+
+            <View style={styles.legendItem}>
+            <Text style={styles.legendLabel}>DF</Text>
+            <Text style={styles.legendText}>
+              Demi-Finale
+            </Text>
+            </View>
+          </View>
+        </>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 15 },
+  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 15, marginBottom: 85 },
   tabs: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -221,9 +372,17 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: "#1077a7ff" },
   tabText: { color: "#333", fontWeight: "600", fontSize: 13 },
   activeTabText: { color: "#fff" },
+  dropdown: {
+    backgroundColor: "#f8fcffff",
+    borderRadius: 18,
+    borderWidth: 1,
+    elevation: 2,
+    borderColor: "#ddd",
+    marginVertical: 8,
+  },
   tableHeader: {
     flexDirection: "row",
-    paddingVertical: 20,
+    paddingVertical: 15,
     borderBottomWidth: 2,
     borderColor: "#CBD5E1",
     backgroundColor: "#1077a7ff",
@@ -249,16 +408,55 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   topTeam: { backgroundColor: "#D1FAE5" },
-  top3: { backgroundColor: "#fae7d1ff" },
+  maybeQualified: { backgroundColor: "#fae7d1ff" },
+  topHighlight: { backgroundColor: "#D1FAE5" },
   cell: { flex: 1, textAlign: "center", color: "#1E293B" },
-  rank: { width: 20, textAlign: "center", fontWeight: "bold", color: "#1E293B" },
+  rank: {
+    width: 20,
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#1E293B",
+  },
   logo: { width: 24, height: 24, marginHorizontal: 6 },
+  logoBracket: { width: 24, height: 24, margin: 2 },
   teamName: { fontSize: 14, color: "#1E293B" },
   legendContainer: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     flexWrap: "wrap",
     marginTop: 15,
-    justifyContent: "center",
+  },
+  colorBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    marginHorizontal: 5,
+  },
+  legendText: { color: "#334155", fontSize: 13, marginRight: 10 },
+  bracketScroll: { marginTop: 10 },
+  roundContainer: { alignItems: "center", marginRight: 30 },
+  roundTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+    color: "#1077a7ff",
+  },
+  matchBox: {
+    backgroundColor: "#f8fcffff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginVertical: 5,
+    alignItems: "center",
+  },
+  matchText: { fontSize: 14, color: "#1E293B", margin: 1 },
+  connectorLine: {
+    width: 2,
+    height: 10,
+    backgroundColor: "#1077a7ff",
+    marginVertical: 2,
   },
   legendItem: {
     flexDirection: "row",
@@ -270,5 +468,4 @@ const styles = StyleSheet.create({
     margin: 4,
   },
   legendLabel: { fontWeight: "bold", marginRight: 4, color: "#1E293B" },
-  legendText: { color: "#334155" },
 });

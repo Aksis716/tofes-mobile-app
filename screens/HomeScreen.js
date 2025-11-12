@@ -1,11 +1,24 @@
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { db } from "../firebaseConfig"; // make sure path is correct
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View
+} from "react-native";
+import { db } from "../firebaseConfig";
 
 export default function HomeScreen({ navigation }) {
   const [nextMatch, setNextMatch] = useState(null);
   const [countdown, setCountdown] = useState("");
+  const { width, height } = useWindowDimensions();
+
+  // 📏 Responsive scaling based on screen width
+  const scale = width / 375; // 375 = iPhone X baseline
+  const fontScale = Math.min(scale * 1.1, 1.3);
 
   useEffect(() => {
     const q = query(collection(db, "fixtures"), orderBy("date", "asc"));
@@ -15,17 +28,14 @@ export default function HomeScreen({ navigation }) {
         ...doc.data(),
       }));
 
-      // Filter matches with a future date
       const now = new Date();
       const upcomingMatches = matches.filter((m) => {
         const matchDate = m.date?.toDate ? m.date.toDate() : new Date(m.date);
         return matchDate > now;
       });
 
-      // Get the next one
       if (upcomingMatches.length > 0) {
-        const next = upcomingMatches[0];
-        setNextMatch(next);
+        setNextMatch(upcomingMatches[0]);
       } else {
         setNextMatch(null);
       }
@@ -34,7 +44,6 @@ export default function HomeScreen({ navigation }) {
     return () => unsubscribe();
   }, []);
 
-  // Countdown logic
   useEffect(() => {
     if (!nextMatch) return;
 
@@ -62,30 +71,59 @@ export default function HomeScreen({ navigation }) {
   }, [nextMatch]);
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>
+    <ScrollView
+      style={[
+        styles.container,
+        { paddingHorizontal: width * 0.03, marginBottom: height * 0.1 },
+      ]}
+      contentContainerStyle={{ paddingBottom: height * 0.1 }}
+    >
+      <Text
+        style={[
+          styles.header,
+          { fontSize: 16 * fontScale, marginTop: height * 0.02 },
+        ]}
+      >
         Tournoi de Football des Escadrons et Services
       </Text>
 
-      <Text style={styles.title}>4ème Édition - Décembre 2025</Text>
+      <Text style={[styles.title, { fontSize: 12 * fontScale }]}>
+        4ème Édition - Décembre 2025
+      </Text>
 
-      <View style={styles.midImage}>
+      <View
+        style={[
+          styles.midImage,
+          {
+            marginTop: -height * 0.02,
+            marginBottom: -height * 0.02,
+          },
+        ]}
+      >
         <Image
           source={require("../assets/images/Tournoi.png")}
-          style={styles.image}
+          style={{
+            width: width * 0.75,
+            height: width * 0.75,
+          }}
           resizeMode="contain"
         />
       </View>
 
-      <View style={styles.paragraph}>
-        <Text style={styles.text}>
+      <View
+        style={[
+          styles.paragraph,
+          { paddingHorizontal: width * 0.02, paddingBottom: height * 0.005 },
+        ]}
+      >
+        <Text style={[styles.text, { fontSize: 13 * fontScale }]}>
           Le sport constitue un élément important de la vie quotidienne des
           militaires. Les activités sportives, en particulier celles qui se font
           en équipe, permettent de développer, renforcer et maintenir un esprit
           de cohésion et de compétitivité saine au sein de nos Forces Armées.
         </Text>
 
-        <Text style={styles.text}>
+        <Text style={[styles.text, { fontSize: 13 * fontScale }]}>
           C’est dans cette optique qu’une compétition de football a été initiée
           au sein de la Base Aérienne 101. Elle oppose les différents Escadrons
           et Services dans un tournoi en poules suivi d’une phase à élimination
@@ -93,36 +131,80 @@ export default function HomeScreen({ navigation }) {
         </Text>
       </View>
 
-      <View style={styles.buttonsContainer}>
+      <View
+        style={[
+          styles.buttonsContainer,
+          {
+            flexDirection: width < 400 ? "column" : "row",
+            alignItems: "center",
+            justifyContent:
+              width < 400 ? "center" : "space-evenly",
+          },
+        ]}
+      >
         {/* Palmarès Card */}
         <TouchableOpacity
-          style={[styles.card, styles.trophiesCard]}
+          style={[
+            styles.card,
+            styles.trophiesCard,
+            {
+              width: width < 400 ? "80%" : "45%",
+              padding: width * 0.02,
+            },
+          ]}
           onPress={() => navigation.navigate("Palmarès 🏆")}
         >
-          <Text style={styles.cardEmoji}>🏆</Text>
-          <Text style={styles.cardTitle}>Palmarès</Text>
-          <Text style={styles.cardSubtitle}>Vainqueurs et Distinctions</Text>
+          <Text style={[styles.cardEmoji, { fontSize: 15 * fontScale }]}>🏆</Text>
+          <Text style={[styles.cardTitle, { fontSize: 13 * fontScale }]}>
+            Palmarès
+          </Text>
+          <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
+            Vainqueurs et Distinctions
+          </Text>
+          <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
+                
+          </Text>
         </TouchableOpacity>
 
         {/* Next Match Card */}
         <TouchableOpacity
-          style={[styles.card, styles.nextMatchCard]}
+          style={[
+            styles.card,
+            styles.nextMatchCard,
+            {
+              width: width < 400 ? "80%" : "45%",
+              padding: width * 0.02,
+            },
+          ]}
           onPress={() => navigation.navigate("Matchs")}
         >
-          <Text style={styles.cardEmoji}>⚽</Text>
-          <Text style={styles.cardTitle}>Prochain Match</Text>
+          <Text style={[styles.cardEmoji, { fontSize: 15 * fontScale }]}>⚽</Text>
+          <Text style={[styles.cardTitle, { fontSize: 13 * fontScale }]}>
+            Prochain Match
+          </Text>
 
           {nextMatch ? (
             <>
-              <Text style={styles.cardSubtitle}>
-                Début : <Text style={styles.countdown}>{countdown}</Text>
+              <Text
+                style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}
+              >
+                Début :{" "}
+                <Text style={[styles.countdown, { fontSize: 11 * fontScale }]}>
+                  {countdown}
+                </Text>
               </Text>
-              <Text style={styles.cardSubtitle}>
+              <Text
+                style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}
+              >
                 {nextMatch.team1} vs {nextMatch.team2}
               </Text>
             </>
           ) : (
-            <Text style={styles.cardSubtitle}>Aucun match à venir</Text>
+            <Text
+              style={[styles.cardSubtitle, { fontSize: 13 * fontScale }]}
+            >
+              Aucun match à venir
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -137,58 +219,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 20,
-    marginHorizontal: 5,
     marginVertical: 10,
-    elevation: 1,
   },
   text: {
-    fontSize: 15,
     color: "#333",
     marginBottom: 10,
+    lineHeight: 22,
   },
   title: {
-    fontSize: 15,
     fontWeight: "bold",
     color: "#1077a7ff",
     textAlign: "center",
   },
   header: {
-    fontSize: 21,
     fontWeight: "bold",
     marginBottom: 10,
-    marginTop: 30,
     color: "#1077a7ff",
     textAlign: "center",
   },
   paragraph: {
     backgroundColor: "#f9fafb",
-    paddingHorizontal: 15,
-    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-  },
-  image: {
-    width: 320,
-    height: 320,
   },
   midImage: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -25,
-    marginBottom: -25,
   },
   buttonsContainer: {
-    paddingHorizontal: 5,
     marginTop: 10,
-    flexDirection: "row",
-    justifyContent: "space-evenly",
   },
   card: {
     backgroundColor: "#fff",
     borderRadius: 18,
-    padding: 5,
-    margin: 5,
     alignItems: "center",
     marginVertical: 10,
     shadowColor: "#000",
@@ -196,19 +260,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 4,
     elevation: 4,
-    width: "45%",
   },
   cardEmoji: {
-    fontSize: 20,
     marginBottom: 1,
   },
   cardTitle: {
-    fontSize: 16,
     fontWeight: "700",
     color: "#333",
   },
   cardSubtitle: {
-    fontSize: 13,
     color: "#666",
     marginTop: 4,
     textAlign: "center",
@@ -224,10 +284,5 @@ const styles = StyleSheet.create({
   countdown: {
     fontWeight: "bold",
     color: "#1077a7ff",
-  },
-  cardDate: {
-    fontSize: 13,
-    color: "#888",
-    marginTop: 6,
   },
 });

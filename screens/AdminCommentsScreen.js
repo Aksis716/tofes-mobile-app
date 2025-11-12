@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#b5e3ffff",
+    borderColor: "#ddd",
     borderRadius: 18,
     padding: 10,
     marginBottom: 10,
@@ -339,11 +339,12 @@ const styles = StyleSheet.create({
 
   commentCard: {
     backgroundColor: "#f9fcff",
-    borderWidth: 1,
-    borderColor: "#e4e9ec",
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
+    elevation: 2,
+    borderWidth: 0.5,
+    borderColor: "#ddd",
   },
   commentHeader: {
     flexDirection: "row",

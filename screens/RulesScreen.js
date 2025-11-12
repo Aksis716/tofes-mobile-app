@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -7,6 +8,13 @@ import {
   View,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+
+const { width, height } = Dimensions.get("window");
+const scale = width / 375; // base width for scaling (iPhone X width)
+const verticalScale = height / 812; // base height for scaling
+
+const responsive = (size) => Math.round(size * scale);
+const vresponsive = (size) => Math.round(size * verticalScale);
 
 export default function ReglementationScreen() {
   const [selectedPhase, setSelectedPhase] = useState("general");
@@ -32,19 +40,18 @@ export default function ReglementationScreen() {
     { text: "L’ordre de priorité pour différencier les équipes est le suivant: nombre de points, différence de buts, résultat confrontation directe (si même poule), nombre de buts marqués et enfin nombre de buts encaissés.", phase: "poule" },
   ];
 
-  const filteredRules = rules.filter(rule => rule.phase === selectedPhase);
+  const filteredRules = rules.filter((rule) => rule.phase === selectedPhase);
 
   return (
     <View style={styles.container}>
       {/* 🧾 Always visible header */}
       <View style={styles.header}>
-
         {/* 🔘 Phase selector buttons */}
         <View style={styles.buttonContainer}>
           {[
             { label: "Règles Générales", value: "general" },
             { label: "Phase de Poules", value: "poule" },
-            { label: "Élimination Directe", value: "elimination" },
+            { label: "Phase Directe", value: "elimination" },
           ].map((btn) => (
             <TouchableOpacity
               key={btn.value}
@@ -71,14 +78,13 @@ export default function ReglementationScreen() {
           capitaines d’équipe seront notifiés en cas de modifications futures de
           ce règlement.
         </Text>
-
       </View>
 
       {/* 📜 Scrollable rules */}
       <ScrollView contentContainerStyle={styles.scrollArea}>
         {filteredRules.map((rule, index) => (
           <View key={index} style={styles.ruleItem}>
-            <Icon name="caret-forward-outline" size={20} color="#1077a7ff" />
+            <Icon name="caret-forward-outline" size={responsive(18)} color="#1077a7ff" />
             <Text style={styles.ruleText}>{rule.text}</Text>
           </View>
         ))}
@@ -94,29 +100,30 @@ export default function ReglementationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
+    marginBottom: 40,
   },
   header: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    backgroundColor: "#f5f5f5",
+    paddingHorizontal: responsive(20),
+    paddingTop: vresponsive(20),
+    paddingBottom: vresponsive(10),
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
   text: {
-    fontSize: 15,
-    marginBottom: 10,
+    fontSize: responsive(13,5),
+    marginBottom: vresponsive(5),
     color: "#333",
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 15,
+    marginBottom: vresponsive(15),
   },
   button: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingVertical: vresponsive(8),
+    paddingHorizontal: responsive(15),
     borderRadius: 20,
     backgroundColor: "#f8fcffff",
     borderWidth: 1,
@@ -126,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1077a7ff",
   },
   buttonText: {
-    fontSize: 13,
+    fontSize: responsive(12),
     color: "#333",
     fontWeight: "600",
   },
@@ -135,22 +142,32 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   scrollArea: {
-    padding: 20,
+    backgroundColor: "#f8fcffff",
+    padding: responsive(18),
+    marginHorizontal: responsive(15),
+    marginTop: vresponsive(15),
+    borderRadius: 25,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginBottom: vresponsive(40),
   },
   ruleItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: vresponsive(8),
   },
   ruleText: {
-    fontSize: 15,
-    marginLeft: 10,
+    fontSize: responsive(13,5),
+    marginLeft: responsive(8),
     flexShrink: 1,
+    color: "#333",
   },
   noRulesText: {
     textAlign: "center",
     color: "gray",
-    marginTop: 20,
+    marginTop: vresponsive(20),
     fontStyle: "italic",
+    fontSize: responsive(13),
   },
 });

@@ -3,22 +3,66 @@ import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
+  LayoutAnimation,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  TouchableOpacity,
+  UIManager,
+  View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { db } from "../firebaseConfig";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+// Get device screen dimensions for responsive design
+const { width, height } = Dimensions.get("window");
+
+// Scale helper for font and component sizes
+const scale = (size) => (width / 375) * size; // base iPhone 11 width
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 export default function ScheduleScreen() {
   const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const teamLogos = {
+    Avions: require("../assets/images/teams/AVIONS.png"),
+    EDA: require("../assets/images/teams/EDA.png"),
+    CRDA: require("../assets/images/teams/CRDA.png"),
+    CFA: require("../assets/images/teams/CFA.png"),
+    Helicos: require("../assets/images/teams/Helicos.png"),
+    EMAA: require("../assets/images/teams/EMAA.png"),
+    FUAES: require("../assets/images/teams/FUAES.png"),
+    Drones: require("../assets/images/teams/Drones.png"),
+    OSA: require("../assets/images/teams/OSA.png"),
+    MGX: require("../assets/images/teams/MGX.png"),
+    EMART: require("../assets/images/teams/EMART.png"),
+    default: require("../assets/images/teams/TeamLogo.png"),
+  };
+
+  const [expanded, setExpanded] = useState({
+    poules: true,
+    quarts: true,
+    demis: true,
+    finale: true,
+  });
+
+  const toggleSection = (key) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   useEffect(() => {
     const q = query(collection(db, "fixtures"), orderBy("date", "asc"));
-
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -33,7 +77,6 @@ export default function ScheduleScreen() {
           }
           return { id: d.id, ...data, _dateObj: dateObj };
         });
-
         setFixtures(fetched);
         setLoading(false);
         setError(null);
@@ -44,8 +87,6 @@ export default function ScheduleScreen() {
         setLoading(false);
       }
     );
-
-    // cleanup listener on unmount
     return () => unsubscribe();
   }, []);
 
@@ -74,85 +115,156 @@ export default function ScheduleScreen() {
     );
   }
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>🗓️ Calendrier des Rencontres</Text>
+  const renderMatches = (matches) =>
+    matches.map((match) => {
+      const d = match._dateObj;
+      const dateText = d ? d.toLocaleDateString() : match.date || "Date à définir";
+      const timeText = d
+        ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : match.time || match.hour || "TBD";
 
-      {fixtures.map((match) => {
-        const d = match._dateObj;
-        const dateText = d ? d.toLocaleDateString() : match.date || "Date à définir";
-        const timeText = d
-          ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          : match.time || match.hour || "TBD";
+      const phase = match.phase || "Phase inconnue";
+      const phaseStyle =
+        phase === "Final" || phase === "Finale"
+          ? styles.finalPhase
+          : String(phase).includes("Demi")
+          ? styles.semiPhase
+          : String(phase).includes("Poule A")
+          ? styles.groupAPhase
+          : String(phase).includes("Poule B")
+          ? styles.groupBPhase
+          : String(phase).includes("Poule C")
+          ? styles.groupCPhase
+          : styles.defaultPhase;
 
-        const phase = match.phase || "Phase inconnue";
-        const phaseStyle =
-          phase === "Final" || phase === "Finale"
-            ? styles.finalPhase
-            : String(phase).includes("Demi-Finales")
-            ? styles.semiPhase
-            : String(phase).includes("Poule A")
-            ? styles.groupAPhase
-            : String(phase).includes("Poule B")
-            ? styles.groupBPhase
-            : String(phase).includes("Poule C")
-            ? styles.groupCPhase
-            : styles.defaultPhase;
+      return (
+        <View key={match.id} style={styles.matchCard}>
+          <View style={styles.headerRow}>
+            <Text style={styles.date}>{dateText} • {timeText}</Text>
+            <Text style={[styles.phase, phaseStyle]}>{phase}</Text>
+          </View>
 
-        return (
-          <View key={match.id} style={styles.matchCard}>
-            <View style={styles.headerRow}>
-              <Text style={styles.date}>
-                {dateText} • {timeText}
-              </Text>
-              <Text style={[styles.phase, phaseStyle]}>{phase}</Text>
+          <View style={styles.teamsContainer}>
+            <View style={styles.team}>
+              <Image
+                source={teamLogos[match.team1] || teamLogos.default}
+                style={styles.teamLogo}
+              />
+              <Text style={styles.teamName}>{match.team1 || "Team 1"}</Text>
             </View>
 
-            <View style={styles.teamsContainer}>
-              <View style={styles.team}>
-                <Image
-                  source={require("../assets/images/teams/TeamLogo.png")}
-                  style={styles.teamLogo}
-                />
-                <Text style={styles.teamName}>{match.team1 || "Team 1"}</Text>
-              </View>
+            <Text style={styles.vs}>vs</Text>
 
-              <Text style={styles.vs}>vs</Text>
-
-              <View style={styles.team}>
-                <Text style={styles.teamName}>{match.team2 || "Team 2"}</Text>
-                <Image
-                  source={require("../assets/images/teams/TeamLogo.png")}
-                  style={styles.teamLogo}
-                />
-              </View>
+            <View style={styles.team}>
+              <Text style={styles.teamName}>{match.team2 || "Team 2"}</Text>
+              <Image
+                source={teamLogos[match.team2] || teamLogos.default}
+                style={styles.teamLogo}
+              />
             </View>
           </View>
-        );
-      })}
+        </View>
+      );
+    });
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+  const pouleMatches = fixtures.filter((f) =>
+    String(f.phase || "").toLowerCase().includes("poule")
+  );
+  const quartMatches = fixtures.filter((f) =>
+    String(f.phase || "").toLowerCase().includes("quart")
+  );
+  const demiMatches = fixtures.filter((f) =>
+    String(f.phase || "").toLowerCase().includes("demi")
+  );
+  const finaleMatches = fixtures.filter((f) => {
+    const phase = String(f.phase || "").toLowerCase();
+    return phase === "final" || phase === "finale";
+  });
+
+  const renderSection = (title, key, matches, emoji) => (
+    <>
+      <TouchableOpacity
+        style={styles.phaseHeader}
+        onPress={() => toggleSection(key)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.phaseTitle}>
+          {emoji} {title}
+        </Text>
+        <Text style={styles.toggleIcon}>{expanded[key] ? "▲" : "▼"}</Text>
+      </TouchableOpacity>
+      {expanded[key] && renderMatches(matches)}
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: scale(80) }}
+      >
+        <Text style={styles.title}>🗓️ Calendrier des Rencontres</Text>
+
+        {pouleMatches.length > 0 && renderSection("Phase de Poules", "poules", pouleMatches, "⚽")}
+        {quartMatches.length > 0 && renderSection("Quarts de Finale", "quarts", quartMatches, "🏆")}
+        {demiMatches.length > 0 && renderSection("Demi-Finales", "demis", demiMatches, "🥇")}
+        {finaleMatches.length > 0 && renderSection("Finale", "finale", finaleMatches, "🏅")}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: "#f5f5f5" },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: scale(15),
+    backgroundColor: "#f5f5f5",
+  },
   title: {
-    fontSize: 18,
+    fontSize: moderateScale(17),
     fontWeight: "bold",
     textAlign: "center",
     color: "#1077a7ff",
-    marginBottom: 15,
+    marginVertical: scale(5),
   },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  phaseHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: scale(10),
+    backgroundColor: "#e7f3f7",
+    borderRadius: scale(10),
+    paddingHorizontal: scale(12),
+    marginTop: scale(10),
+  },
+  phaseTitle: {
+    fontSize: moderateScale(15),
+    fontWeight: "bold",
+    color: "#1077a7ff",
+  },
+  toggleIcon: {
+    fontSize: moderateScale(16),
+    color: "#1077a7ff",
+    fontWeight: "bold",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: scale(20),
+  },
   matchCard: {
     backgroundColor: "#f8fcffff",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingLeft: 12,
-    marginBottom: 12,
-    paddingRight: 8,
+    borderRadius: scale(12),
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(10),
+    marginBottom: scale(12),
+    marginHorizontal: scale(10),
     elevation: 2,
     borderWidth: 1,
     borderColor: "#ddd",
@@ -160,16 +272,15 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 0,
     alignItems: "center",
   },
-  date: { fontSize: 14, fontWeight: "700", color: "#1077a7ff" },
+  date: { fontSize: moderateScale(13), fontWeight: "700", color: "#1077a7ff" },
   phase: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: "700",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
+    paddingVertical: scale(3),
+    paddingHorizontal: scale(8),
+    borderRadius: scale(10),
     overflow: "hidden",
     color: "#fff",
   },
@@ -183,13 +294,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
-    marginTop: -5,
-    marginBottom: -5,
-    paddingVertical: 1,
-    paddingHorizontal: 20,
+    paddingVertical: scale(6),
   },
-  team: { flexDirection: "row", alignItems: "center", justifyContent: "space-evenly", width: 110 },
-  teamLogo: { width: 50, height: 50, resizeMode: "contain", marginBottom: -5 },
-  teamName: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },
-  vs: { fontWeight: "bold", color: "#1077a7ff", fontSize: 16 },
+  team: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    width: width * 0.28,
+  },
+  teamLogo: {
+    width: scale(45),
+    height: scale(45),
+    resizeMode: "contain",
+  },
+  teamName: {
+    fontSize: moderateScale(13),
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+    flexShrink: 1,
+  },
+  vs: { fontWeight: "bold", color: "#1077a7ff", fontSize: moderateScale(16) },
 });

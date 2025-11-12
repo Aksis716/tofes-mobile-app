@@ -1,45 +1,64 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { db } from "../firebaseConfig";
 
 export default function TeamDetailsScreen({ route }) {
+  const { width } = useWindowDimensions();
+  const scale = width / 400; // base scale for medium phone width
+
   const { team } = route.params;
   const [teamData, setTeamData] = useState(team || null);
   const [loading, setLoading] = useState(!team || !team.players);
 
   const teamLogos = {
-  "Avions": require("../assets/images/teams/AVIONS.png"),
-  "EDA": require("../assets/images/teams/EDA.png"),
-  "CRDA": require("../assets/images/teams/CRDA.png"),
-  // fallback if team not found
-  default: require("../assets/images/teams/TeamLogo.png"),
+    Avions: require("../assets/images/teams/AVIONS.png"),
+    EDA: require("../assets/images/teams/EDA.png"),
+    CRDA: require("../assets/images/teams/CRDA.png"),
+    CFA: require("../assets/images/teams/CFA.png"),
+    Hélicos: require("../assets/images/teams/Helicos.png"),
+    EMAA: require("../assets/images/teams/EMAA.png"),
+    FUAES: require("../assets/images/teams/FUAES.png"),
+    Drones: require("../assets/images/teams/Drones.png"),
+    OSA: require("../assets/images/teams/OSA.png"),
+    MGX: require("../assets/images/teams/MGX.png"),
+    EMART: require("../assets/images/teams/EMART.png"),
+    default: require("../assets/images/teams/TeamLogo.png"),
   };
 
   useEffect(() => {
-    const fetchTeam = async () => {
-      if (!team.id) return;
-      try {
-        const docRef = doc(db, "teams", team.id);
-        const docSnap = await getDoc(docRef);
+    if (!team.id) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, "teams", team.id),
+      (docSnap) => {
         if (docSnap.exists()) {
           setTeamData({ id: docSnap.id, ...docSnap.data() });
         }
-      } catch (error) {
-        console.error("Error fetching team details:", error);
-      } finally {
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error listening to team details:", error);
         setLoading(false);
       }
-    };
+    );
 
-    if (!team.players) fetchTeam();
+    return () => unsubscribe();
   }, [team]);
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1077a7ff" />
+        <ActivityIndicator size="large" color="#1077a7" />
         <Text>Chargement des détails de l’équipe...</Text>
       </View>
     );
@@ -47,100 +66,172 @@ export default function TeamDetailsScreen({ route }) {
 
   const players = teamData?.players || [];
 
-  const renderPlayer = ({ item }) => (
-    <View style={styles.playerRow}>
-      <Icon name="person-outline" size={22} color="#1077a7ff" />
-      <Text style={styles.playerNumber}>#{item.number}</Text>
-      <Text style={styles.playerName}>{item.name}</Text>
-      <Text style={styles.playerPosition}>{item.position}</Text>
-    </View>
-  );
-
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={[styles.container, { padding: 20 * scale }]}
+      contentContainerStyle={{ paddingBottom: 50 * scale }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ✅ Team Header */}
       <Image
         source={teamLogos[teamData.name] || teamLogos.default}
-        style={styles.logo}
+        style={{
+          width: 150 * scale,
+          height: 150 * scale,
+          alignSelf: "center",
+          marginBottom: 10 * scale,
+          marginTop: -5 * scale,
+        }}
         resizeMode="contain"
       />
 
-      <Text style={styles.teamName}>{teamData?.name}</Text>
+      <Text
+        style={[
+          styles.teamName,
+          {
+            fontSize: 22 * scale,
+            marginBottom: 20 * scale,
+          },
+        ]}
+      >
+        {teamData?.name}
+      </Text>
 
-      <View style={styles.infoContainer}>
-        <Text style={styles.info}>🏙️ Nom Complet: {teamData?.fullname}</Text>
-        <Text style={styles.info}>👔 Coach: {teamData?.coach}</Text>
-        <Text style={styles.info}>⚽ Nombre de joueurs: {players.length}</Text>
-        <Text style={styles.info}>
+      {/* ✅ Team Info */}
+      <View
+        style={[
+          styles.infoContainer,
+          {
+            padding: 12 * scale,
+            borderRadius: 10 * scale,
+            marginBottom: 20 * scale,
+          },
+        ]}
+      >
+        <Text style={[styles.info, { fontSize: 15 * scale }]}>
+          🏙️ Nom Complet: {teamData?.fullname}
+        </Text>
+        <Text style={[styles.info, { fontSize: 15 * scale }]}>
+          👔 Coach: {teamData?.coach}
+        </Text>
+        <Text style={[styles.info, { fontSize: 15 * scale }]}>
+          ⚽ Nombre de joueurs: {players.length}
+        </Text>
+        <Text style={[styles.info, { fontSize: 15 * scale }]}>
           ⭐ Tournois remportés: {teamData?.trophies}
         </Text>
       </View>
 
-      <Text style={styles.playersTitle}>👟  Joueurs Enregistrés</Text>
+      {/* ✅ Players List */}
+      <Text
+        style={[
+          styles.playersTitle,
+          { fontSize: 17 * scale, marginBottom: 10 * scale },
+        ]}
+      >
+        👟 Joueurs Enregistrés
+      </Text>
 
       {players.length > 0 ? (
-        <FlatList
-          data={players}
-          renderItem={renderPlayer}
-          keyExtractor={(item, index) => item.id || index.toString()}
-          contentContainerStyle={styles.playersList}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.playersList}>
+          {players.map((player, index) => (
+            <View
+              key={index}
+              style={[
+                styles.playerRow,
+                {
+                  paddingVertical: 10 * scale,
+                  paddingHorizontal: 12 * scale,
+                  borderRadius: 8 * scale,
+                  marginBottom: 8 * scale,
+                },
+              ]}
+            >
+              <Icon
+                name="person-outline"
+                size={22 * scale}
+                color="#1077a7"
+                style={{ marginRight: 6 * scale }}
+              />
+              <Text
+                style={[
+                  styles.playerNumber,
+                  { fontSize: 14 * scale, marginHorizontal: 6 * scale },
+                ]}
+              >
+                #{player.number}
+              </Text>
+              <Text
+                style={[styles.playerName, { fontSize: 15 * scale }]}
+                numberOfLines={1}
+              >
+                {player.name}
+              </Text>
+              <Text
+                style={[styles.playerPosition, { fontSize: 13 * scale }]}
+                numberOfLines={1}
+              >
+                {player.position}
+              </Text>
+            </View>
+          ))}
+        </View>
       ) : (
-        <Text style={styles.noPlayers}>
+        <Text
+          style={[
+            styles.noPlayers,
+            { fontSize: 14 * scale, marginTop: 20 * scale },
+          ]}
+        >
           Aucun joueur enregistré pour cette équipe.
         </Text>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 20 },
-  logo: { width: 150, height: 150, alignSelf: "center", marginBottom: 1, marginTop: -20 },
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
   teamName: {
-    fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    color: "#1077a7ff",
-    marginBottom: 20,
+    color: "#1077a7",
   },
   infoContainer: {
     backgroundColor: "#f8fcffff",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 20,
     elevation: 2,
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  info: { fontSize: 16, marginBottom: 5 },
+  info: {
+    marginBottom: 5,
+    color: "#333",
+  },
   playersTitle: {
-    fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 10,
-    color: "#1077a7ff",
+    color: "#1077a7",
   },
-  playersList: { paddingBottom: 40 },
+  playersList: {
+    marginTop: 5,
+  },
   playerRow: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f8fcffff",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-    borderRadius: 8,
     elevation: 2,
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  playerNumber: { fontWeight: "bold", color: "#1077a7ff", marginHorizontal: 8 },
-  playerName: { flex: 1, fontSize: 16, color: "#333" },
-  playerPosition: { fontSize: 14, color: "gray" },
+  playerNumber: { fontWeight: "bold", color: "#1077a7" },
+  playerName: { flex: 1, color: "#333" },
+  playerPosition: { color: "gray" },
   noPlayers: {
     textAlign: "center",
     color: "#777",
-    marginTop: 20,
     fontStyle: "italic",
   },
   loadingContainer: {

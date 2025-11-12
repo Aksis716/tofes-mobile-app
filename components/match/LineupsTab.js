@@ -1,4 +1,3 @@
-// components/match/LineupsTab.js
 import { User } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -8,12 +7,12 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  View,
+  View
 } from "react-native";
 
 export default function LineupsTab(props) {
   const match = props.match || props.route?.params?.match;
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const [showBench, setShowBench] = useState(false);
 
   if (!match) {
@@ -30,20 +29,23 @@ export default function LineupsTab(props) {
   const coach1 = match.coach1 || match.coachTeam1 || "Coach équipe 1";
   const coach2 = match.coach2 || match.coachTeam2 || "Coach équipe 2";
 
-  const pitchWidth = Math.min(width * 0.96, 900);
+  // ✅ responsive pitch sizing
+  const pitchWidth = Math.min(width * 0.94, 900);
   const pitchAspect = 1.5;
   const pitchHeight = Math.round(pitchWidth * pitchAspect);
 
-  // 1 GK, 3 DEF, 3 MID, 1 FW
+  // scale helper based on screen width
+  const scale = width / 390; // iPhone 12 baseline
+
   const layoutPositions = [
-    { x: 0.45, y: 0.07 },
-    { x: 0.15, y: 0.22 },
-    { x: 0.45, y: 0.18 },
-    { x: 0.75, y: 0.22 },
-    { x: 0.15, y: 0.38 },
-    { x: 0.45, y: 0.30 },
-    { x: 0.75, y: 0.38 },
-    { x: 0.45, y: 0.43 },
+    { x: 0.46, y: 0.075 },
+    { x: 0.16, y: 0.22 },
+    { x: 0.46, y: 0.19 },
+    { x: 0.76, y: 0.22 },
+    { x: 0.16, y: 0.38 },
+    { x: 0.46, y: 0.31 },
+    { x: 0.76, y: 0.38 },
+    { x: 0.46, y: 0.43 },
   ];
 
   function mapPlayersToLayout(players) {
@@ -88,30 +90,44 @@ export default function LineupsTab(props) {
         key={(p && (p.id || p.name)) || `empty-${idx}-${flipVertical ? "t2" : "t1"}`}
         style={[
           styles.playerWrapper,
-          { left: Math.round(x - 20), top: Math.round(posY - 20) },
+          {
+            left: Math.round(x - 20 * scale),
+            top: Math.round(posY - 20 * scale),
+            width: 70 * scale,
+          },
         ]}
       >
-        {/* Player icon + badge container */}
         <View style={styles.iconContainer}>
-          <View style={[styles.iconBox, { backgroundColor: teamColor }]}>
-            <User color="#fff" size={18} />
+          <View
+            style={[
+              styles.iconBox,
+              { backgroundColor: teamColor, width: 36 * scale, height: 36 * scale, borderRadius: 18 * scale },
+            ]}
+          >
+            <User color="#fff" size={18 * scale} />
             {p && playerBadge(p) ? (
-              <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>{playerBadge(p)}</Text>
+              <View
+                style={[
+                  styles.badgeContainer,
+                  {
+                    top: -2 * scale,
+                    right: -8 * scale,
+                    paddingHorizontal: 3 * scale,
+                    paddingVertical: 1 * scale,
+                  },
+                ]}
+              >
+                <Text style={[styles.badgeText, { fontSize: 9 * scale }]}>{playerBadge(p)}</Text>
               </View>
             ) : null}
           </View>
         </View>
 
-        {/* Player number */}
-        {p?.position ? (
-          <Text style={styles.playerNumber}>{p.position}</Text>
-        ) : (
-          <Text style={styles.playerNumber}>–</Text>
-        )}
+        <Text style={[styles.playerNumber, { fontSize: 11 * scale, borderRadius: 6 * scale }]}>
+          {p?.position ?? "–"}
+        </Text>
 
-        {/* Player name */}
-        <Text style={styles.playerName} numberOfLines={1}>
+        <Text style={[styles.playerName, { fontSize: 12.5 * scale }]} numberOfLines={1}>
           {p?.name ?? ""}
         </Text>
       </View>
@@ -120,8 +136,8 @@ export default function LineupsTab(props) {
 
   const renderPitch = () => (
     <>
-      <View style={{ width: pitchWidth, alignItems: "center", marginBottom: 6 }}>
-        <Text style={styles.coachTopText}>👨‍🏫 Coach: {coach1}</Text>
+      <View style={{ width: pitchWidth, alignItems: "center", marginBottom: 6 * scale }}>
+        <Text style={[styles.coachTopText, { fontSize: 14.5 * scale }]}>👨‍🏫 Coach: {coach1}</Text>
       </View>
 
       <View style={[styles.pitchContainer, { width: pitchWidth, height: pitchHeight }]}>
@@ -134,31 +150,45 @@ export default function LineupsTab(props) {
         {team2Layout.map((p, i) => renderPlayer(p, i, "#a71010", true))}
       </View>
 
-      <View style={{ width: pitchWidth, alignItems: "center", marginTop: 8, marginBottom: 20 }}>
-        <Text style={styles.coachBottomText}>👨‍🏫 Coach: {coach2}</Text>
+      <View
+        style={{
+          width: pitchWidth,
+          alignItems: "center",
+          marginTop: 8 * scale,
+          marginBottom: 20 * scale,
+        }}
+      >
+        <Text style={[styles.coachBottomText, { fontSize: 14.5 * scale }]}>
+          👨‍🏫 Coach: {coach2}
+        </Text>
       </View>
     </>
   );
 
   const renderBench = () => (
-    <View style={[styles.benchContainer, { width: pitchWidth }]}>
+    <View
+      style={[
+        styles.benchContainer,
+        { width: pitchWidth, paddingVertical: 10 * scale, paddingHorizontal: 8 * scale },
+      ]}
+    >
       <View style={styles.benchColumn}>
-        <Text style={styles.benchTitle}>{match.team1 || "Equipe 1"}</Text>
+        <Text style={[styles.benchTitle, { fontSize: 16 * scale }]}>{match.team1 || "Equipe 1"}</Text>
         {players1
           .filter((p) => Number(p.position) > 8 || Number.isNaN(Number(p.position)))
           .map((p) => (
-            <Text key={p.id || p.name} style={styles.benchItem}>
+            <Text key={p.id || p.name} style={[styles.benchItem, { fontSize: 13 * scale }]}>
               {p.position ? `${p.position}. ` : ""}
               {p.name} {playerBadge(p) ? `· ${playerBadge(p)}` : ""}
             </Text>
           ))}
       </View>
       <View style={styles.benchColumn}>
-        <Text style={styles.benchTitle}>{match.team2 || "Equipe 2"}</Text>
+        <Text style={[styles.benchTitle, { fontSize: 16 * scale }]}>{match.team2 || "Equipe 2"}</Text>
         {players2
           .filter((p) => Number(p.position) > 8 || Number.isNaN(Number(p.position)))
           .map((p) => (
-            <Text key={p.id || p.name} style={styles.benchItem}>
+            <Text key={p.id || p.name} style={[styles.benchItem, { fontSize: 13 * scale }]}>
               {p.position ? `${p.position}. ` : ""}
               {p.name} {playerBadge(p) ? `· ${playerBadge(p)}` : ""}
             </Text>
@@ -169,12 +199,12 @@ export default function LineupsTab(props) {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.toggleContainer}>
+      <View style={[styles.toggleContainer, { marginTop: 15 * scale, marginBottom: 15 * scale }]}>
         <TouchableOpacity
           style={[styles.toggleButton, !showBench && styles.activeButton]}
           onPress={() => setShowBench(false)}
         >
-          <Text style={[styles.toggleText, !showBench && styles.activeText]}>
+          <Text style={[styles.toggleText, !showBench && styles.activeText, { fontSize: 14 * scale }]}>
             Titulaires
           </Text>
         </TouchableOpacity>
@@ -183,7 +213,7 @@ export default function LineupsTab(props) {
           style={[styles.toggleButton, showBench && styles.activeButton]}
           onPress={() => setShowBench(true)}
         >
-          <Text style={[styles.toggleText, showBench && styles.activeText]}>
+          <Text style={[styles.toggleText, showBench && styles.activeText, { fontSize: 14 * scale }]}>
             Remplaçants
           </Text>
         </TouchableOpacity>
@@ -198,14 +228,12 @@ const styles = StyleSheet.create({
   scrollContainer: {
     alignItems: "center",
     paddingBottom: 15,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
   },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
 
   toggleContainer: {
     flexDirection: "row",
-    marginBottom: 15,
-    marginTop: 15,
     borderRadius: 15,
     overflow: "hidden",
   },
@@ -230,53 +258,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  playerWrapper: { position: "absolute", alignItems: "center", width: 80 },
-  iconContainer: { position: "relative", alignItems: "center", justifyContent: "center" },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  playerWrapper: { position: "absolute", alignItems: "center" },
+  iconContainer: { alignItems: "center", justifyContent: "center" },
+  iconBox: { alignItems: "center", justifyContent: "center" },
   badgeContainer: {
     position: "absolute",
-    top: -2,
-    right: -8,
     backgroundColor: "#fff",
     borderRadius: 6,
-    paddingHorizontal: 3,
-    paddingVertical: 1,
   },
-  badgeText: { fontSize: 9, fontWeight: "600" },
+  badgeText: { fontWeight: "600" },
 
   playerNumber: {
-    fontSize: 12,
     fontWeight: "700",
-    color: "#ffffffff",
-    marginTop: -10,
-    backgroundColor: "#000000ff",
-    borderRadius: 6,
+    color: "#fff",
+    marginTop: -8,
+    backgroundColor: "#000",
     paddingHorizontal: 4,
-    paddingVertical: -2,
   },
   playerName: {
     marginTop: -2,
-    fontSize: 13,
     fontWeight: "800",
     textAlign: "center",
     color: "#000",
   },
-
-  coachTopText: { fontSize: 15, fontWeight: "600", color: "#0b5070", marginBottom: 4 },
-  coachBottomText: { fontSize: 15, fontWeight: "600", color: "#7a0b0b", marginBottom: 15 },
+  coachTopText: { fontWeight: "600", color: "#0b5070" },
+  coachBottomText: { fontWeight: "600", color: "#7a0b0b" },
 
   benchContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 0,
-    paddingHorizontal: 6,
     borderRadius: 15,
     backgroundColor: "#f8fcffff",
     elevation: 3,
@@ -284,6 +294,6 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
   benchColumn: { width: "48%", alignItems: "center" },
-  benchTitle: { fontWeight: "700", marginBottom: 20, marginTop: 20, fontSize: 17, color: "#1077a7" },
-  benchItem: { marginBottom: 30, color: "#333" },
+  benchTitle: { fontWeight: "700", marginBottom: 20, marginTop: 20, color: "#1077a7" },
+  benchItem: { marginBottom: 20, color: "#333" },
 });

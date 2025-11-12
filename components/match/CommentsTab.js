@@ -299,7 +299,7 @@ export default function CommentsTab({ match }) {
 
 // ✅ All styles remain unchanged
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 10 },
+  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 10 },
   emptyBox: { alignItems: "center", marginTop: 50 },
   emptyText: { color: "#777", fontStyle: "italic" },
   commentCard: {

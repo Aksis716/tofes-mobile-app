@@ -1,52 +1,68 @@
-import * as React from 'react';
-import { useEffect, useState } from "react";
-
 import { Ionicons } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
-
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
-import { auth, db } from "../firebaseConfig";
-
-
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-import * as Updates from 'expo-updates';
-import { Alert, Platform } from "react-native";
-
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import * as Updates from 'expo-updates';
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
+import * as React from 'react';
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Dimensions,
+  Platform,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import CustomDrawer from '../components/CustomDrawer';
+import { LanguageProvider } from "../contexts/LanguageContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
+import { auth, db } from "../firebaseConfig";
 
+// Screens
+import AuthScreen from '../screens/AuthScreen';
 import FixturesScreen from '../screens/FixturesScreen';
 import HomeScreen from '../screens/HomeScreen';
+import MatchScreen from '../screens/MatchScreen';
+import NotificationScreen from '../screens/NotificationScreen';
+import ParametersScreen from '../screens/ParametersScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import RulesScreen from '../screens/RulesScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import StandingsScreen from '../screens/StandingsScreen';
-
-import AdminCommentsScreen from '../screens/AdminCommentsScreen';
-import AdminFixturesScreen from '../screens/AdminFixturesScreen';
-import AdminTablesScreen from '../screens/AdminTablesScreen';
-import AdminUsersScreen from '../screens/AdminUsersScreen';
-import MatchScreen from '../screens/MatchScreen';
-import ParametersScreen from '../screens/ParametersScreen';
-import RulesScreen from '../screens/RulesScreen';
 import TeamDetailsScreen from '../screens/TeamDetailsScreen';
 import TeamsScreen from '../screens/TeamsScreen';
 import WinnersScreen from '../screens/WinnersScreen';
 
-import { LanguageProvider } from "../contexts/LanguageContext";
-import { ThemeProvider } from "../contexts/ThemeContext";
-
+// Admin Screens
+import AdminCommentsScreen from '../screens/AdminCommentsScreen';
+import AdminDevicesScreen from '../screens/AdminDevicesScreen';
+import AdminFixturesScreen from '../screens/AdminFixturesScreen';
 import AdminNotificationScreen from "../screens/AdminNotificationScreen";
-import AuthScreen from '../screens/AuthScreen';
-import NotificationScreen from "../screens/NotificationScreen";
-import ProfileScreen from "../screens/ProfileScreen";
+import AdminTablesScreen from '../screens/AdminTablesScreen';
+import AdminTeamsScreen from '../screens/AdminTeamsScreen';
+import AdminUsersScreen from '../screens/AdminUsersScreen';
 
-import CustomDrawer from '../components/CustomDrawer';
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// ✅ Get screen dimensions
+const { width } = Dimensions.get('window');
+const isSmallDevice = width < 360; // e.g., small Androids
+
+// 🔹 Use SafeArea for iPhones and Android status bar
+function SafeAreaWrapper({ children }: any) {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      {children}
+    </SafeAreaView>
+  );
+}
 
 async function registerDeviceInDatabase(token: any) {
   if (!token) return;
@@ -95,7 +111,25 @@ function BottomTabs() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#1077a7ff',
-        tabBarInactiveTintColor: 'gray',
+        tabBarInactiveTintColor: '#7a8388ff',
+        tabBarLabelStyle: {
+          fontSize: isSmallDevice ? 10 : 12,
+        },
+        tabBarStyle: {
+          position: 'absolute',
+          left: width * 0.05,
+          right: width * 0.05,
+          elevation: 5,
+          borderRadius: 25,
+          borderTopWidth: 0,
+          height: isSmallDevice ? 75 : 90,
+          backgroundColor: '#f8fcffff',
+          shadowColor: '#000',
+          shadowOpacity: 0.15,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 6,
+        },
+        headerShown: false,
       })}
     >
 
@@ -327,6 +361,7 @@ const TopRightIcons = ({ navigation }: any) => (
   return (
     <ThemeProvider>
       <LanguageProvider>
+        <SafeAreaWrapper>
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawer {...props} />}
       screenOptions={({ navigation }) => ({
@@ -336,7 +371,7 @@ const TopRightIcons = ({ navigation }: any) => (
         drawerInactiveTintColor: "gray",
         drawerStyle: {
           backgroundColor: "#fff",
-          width: 250,
+          width: width * 0.7, // adaptive drawer width
         },
         headerStyle: {
           backgroundColor: "#1077a7ff", // 🎨 Header background color
@@ -463,6 +498,46 @@ const TopRightIcons = ({ navigation }: any) => (
       {(userRole === "admin" || userRole === "creator") && (
         <>
           <Drawer.Screen
+            name="Admin Teams"
+            component={AdminTeamsScreen}
+            options={{
+              title: "Admin Equipes",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="people-sharp" size={size} color={color} />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="Admin Matchs"
+            component={AdminFixturesScreen}
+            options={{
+              title: "Admin Matchs",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="football-sharp" size={size} color={color} />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="Admin Tables"
+            component={AdminTablesScreen}
+            options={{
+              title: "Admin Tables",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons
+                  name="stats-chart-sharp"
+                  size={size}
+                  color={color}
+                />
+              ),
+            }}
+          />
+          <Drawer.Screen
             name="Admin Notifications"
             component={AdminNotificationScreen}
             options={{
@@ -471,7 +546,7 @@ const TopRightIcons = ({ navigation }: any) => (
               headerTintColor: "#fff",
               drawerIcon: ({ color, size }) => (
                 <Ionicons
-                  name="notifications-circle-outline"
+                  name="notifications-circle-sharp"
                   size={size}
                   color={color}
                 />
@@ -487,35 +562,7 @@ const TopRightIcons = ({ navigation }: any) => (
               headerTintColor: "#fff",
               drawerIcon: ({ color, size }) => (
                 <Ionicons
-                  name="chatbubble-outline"
-                  size={size}
-                  color={color}
-                />
-              ),
-            }}
-          />
-          <Drawer.Screen
-            name="Admin Matchs"
-            component={AdminFixturesScreen}
-            options={{
-              title: "Admin Matchs",
-              headerStyle: { backgroundColor: "#1077a7" },
-              headerTintColor: "#fff",
-              drawerIcon: ({ color, size }) => (
-                <Ionicons name="football-outline" size={size} color={color} />
-              ),
-            }}
-          />
-          <Drawer.Screen
-            name="Admin Tables"
-            component={AdminTablesScreen}
-            options={{
-              title: "Admin Tables",
-              headerStyle: { backgroundColor: "#1077a7" },
-              headerTintColor: "#fff",
-              drawerIcon: ({ color, size }) => (
-                <Ionicons
-                  name="stats-chart-outline"
+                  name="chatbubble-sharp"
                   size={size}
                   color={color}
                 />
@@ -527,6 +574,7 @@ const TopRightIcons = ({ navigation }: any) => (
 
       {/* 👑 Creator only */}
       {userRole === "creator" && (
+        <>
         <Drawer.Screen
           name="Admin Users"
           component={AdminUsersScreen}
@@ -543,8 +591,26 @@ const TopRightIcons = ({ navigation }: any) => (
             ),
           }}
         />
+        <Drawer.Screen
+            name="Admin Plateformes"
+            component={AdminDevicesScreen}
+            options={{
+              title: "Admin Plateformes",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons
+                  name="phone-portrait"
+                  size={size}
+                  color={color}
+                />
+              ),
+            }}
+          />
+        </>
       )}
     </Drawer.Navigator>
+        </SafeAreaWrapper>
       </LanguageProvider>
     </ThemeProvider>
   );

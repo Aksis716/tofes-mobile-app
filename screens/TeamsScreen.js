@@ -1,116 +1,158 @@
 import { useNavigation } from "@react-navigation/native";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { db } from "../firebaseConfig"; // make sure this path is correct
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import { db } from "../firebaseConfig";
 
 export default function TeamsScreen() {
-  const teamLogos = {
-  "Avions": require("../assets/images/teams/AVIONS.png"),
-  "EDA": require("../assets/images/teams/EDA.png"),
-  "CRDA": require("../assets/images/teams/CRDA.png"),
-  // fallback if team not found
-  default: require("../assets/images/teams/TeamLogo.png"),
-  };
-
+  const { width } = useWindowDimensions();
   const navigation = useNavigation();
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Fetch teams from Firestore
+  // ✅ dynamic scaling factors
+  const scale = width / 400; // base on medium phone
+  const numColumns = width < 400 ? 2 : width < 700 ? 3 : 4;
+
+  const teamLogos = {
+    Avions: require("../assets/images/teams/AVIONS.png"),
+    EDA: require("../assets/images/teams/EDA.png"),
+    CRDA: require("../assets/images/teams/CRDA.png"),
+    CFA: require("../assets/images/teams/CFA.png"),
+    Hélicos: require("../assets/images/teams/Helicos.png"),
+    EMAA: require("../assets/images/teams/EMAA.png"),
+    FUAES: require("../assets/images/teams/FUAES.png"),
+    Drones: require("../assets/images/teams/Drones.png"),
+    OSA: require("../assets/images/teams/OSA.png"),
+    MGX: require("../assets/images/teams/MGX.png"),
+    EMART: require("../assets/images/teams/EMART.png"),
+    default: require("../assets/images/teams/TeamLogo.png"),
+  };
+
   useEffect(() => {
-    const fetchTeams = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "teams"));
-        const teamsData = querySnapshot.docs.map((doc) => ({
+    const unsubscribe = onSnapshot(
+      collection(db, "teams"),
+      (snapshot) => {
+        const teamsData = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
         setTeams(teamsData);
-      } catch (error) {
-        console.error("Error fetching teams:", error);
-      } finally {
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error listening to teams:", error);
         setLoading(false);
       }
-    };
-
-    fetchTeams();
+    );
+    return () => unsubscribe();
   }, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.teamCard}
+      style={[
+        styles.teamCard,
+        {
+          padding: 8 * scale,
+          marginHorizontal: 8 * scale,
+          marginVertical: 10 * scale,
+          borderRadius: 24 * scale,
+        },
+      ]}
       onPress={() => navigation.navigate("TeamDetails", { team: item })}
     >
-      {/* ✅ Display logo (if stored as URL in Firestore) */}
       <Image
         source={teamLogos[item.name] || teamLogos.default}
-        style={styles.logo}
+        style={{
+          width: 75 * scale,
+          height: 75 * scale,
+          marginBottom: 4 * scale,
+        }}
         resizeMode="contain"
       />
-      <Text style={styles.teamName}>{item.name}</Text>
+      <Text
+        style={[
+          styles.teamName,
+          {
+            fontSize: 15 * scale,
+          },
+        ]}
+      >
+        {item.name}
+      </Text>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1077a7ff" />
+        <ActivityIndicator size="large" color="#1077a7" />
         <Text>Chargement des équipes...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>
+    <View style={[styles.container, { paddingTop: 20 * scale }]}>
+      <Text
+        style={[
+          styles.text,
+          {
+            fontSize: 14 * scale,
+            marginHorizontal: 15 * scale,
+            marginBottom: 10 * scale,
+          },
+        ]}
+      >
         Les douze (12) équipes retenues pour la compétition sont indiquées ci-dessous. Elles
-        s’affronteront dans un système de poules avant de passer aux matchs de qualification directe.
-        Les détails sur chaque équipe peuvent être obtenus en cliquant sur son logo.
+        s’affronteront dans un système de poules avant de passer aux matchs de qualification
+        directe. Les détails sur chaque équipe peuvent être obtenus en cliquant sur son logo.
       </Text>
 
       <FlatList
         data={teams}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        numColumns={3}
-        contentContainerStyle={styles.list}
+        numColumns={numColumns}
+        contentContainerStyle={{
+          paddingHorizontal: 6 * scale,
+          paddingBottom: 80 * scale,
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5", paddingTop: 20 },
-  text: {
-    fontSize: 15,
-    marginLeft: 15,
-    marginRight: 15,
-    marginBottom: 10,
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
   },
-  list: { paddingHorizontal: 1 },
+  text: {
+    color: "#222",
+    textAlign: "justify",
+  },
   teamCard: {
     flex: 1,
     alignItems: "center",
     backgroundColor: "#f8fcffff",
-    marginVertical: 12,
-    marginHorizontal: 8,
-    padding: 8,
-    borderRadius: 30,
-    elevation: 2,
+    elevation: 3,
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  logo: { width: 75, height: 75, marginBottom: 0 },
   teamName: {
-    fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
-    color: "#1077a7ff",
-  },
-  coach: {
-    fontSize: 12,
-    color: "#555",
+    color: "#1077a7",
   },
   loadingContainer: {
     flex: 1,
