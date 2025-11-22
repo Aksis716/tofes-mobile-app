@@ -227,7 +227,7 @@ export default function LineupsTab(props) {
 const styles = StyleSheet.create({
   scrollContainer: {
     alignItems: "center",
-    paddingBottom: 15,
+    paddingBottom: 30,
     backgroundColor: "#f5f5f5",
   },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },

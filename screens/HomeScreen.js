@@ -74,7 +74,7 @@ export default function HomeScreen({ navigation }) {
     <ScrollView
       style={[
         styles.container,
-        { paddingHorizontal: width * 0.03, marginBottom: height * 0.1 },
+        { paddingHorizontal: width * 0.01, marginBottom: height * 0.12, marginHorizontal: width * 0.02 },
       ]}
       contentContainerStyle={{ paddingBottom: height * 0.1 }}
     >
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f8fcffff",
     borderRadius: 18,
     alignItems: "center",
     marginVertical: 10,

@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomDrawer from '../components/CustomDrawer';
 import { LanguageProvider } from "../contexts/LanguageContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
@@ -99,6 +100,8 @@ Notifications.setNotificationHandler({
 });
 
 function BottomTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -122,7 +125,8 @@ function BottomTabs() {
           elevation: 5,
           borderRadius: 25,
           borderTopWidth: 0,
-          height: isSmallDevice ? 75 : 90,
+          paddingBottom: insets.bottom + 10,
+          height: (isSmallDevice ? 40 : 55) + insets.bottom,
           backgroundColor: '#f8fcffff',
           shadowColor: '#000',
           shadowOpacity: 0.15,
@@ -423,11 +427,11 @@ const TopRightIcons = ({ navigation }: any) => (
         }}
       />
       <Drawer.Screen
-        name="Paramètres"
+        name="À propos"
         component={ParametersScreen}
         options={{
           drawerIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
+            <Ionicons name="information-circle-outline" size={size} color={color} />
           ),
         }}
       />

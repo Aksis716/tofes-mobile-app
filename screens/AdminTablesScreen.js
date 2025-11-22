@@ -282,7 +282,7 @@ export default function AdminTablesScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f5f5f5", marginBottom: 40 }}>
+    <View style={{ flex: 1, backgroundColor: "#f5f5f5", marginBottom: 50 }}>
       <FlatList
         ListHeaderComponent={
           <>

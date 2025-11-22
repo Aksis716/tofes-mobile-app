@@ -142,6 +142,7 @@ export default function AdminNotificationScreen() {
         borderColor: "#ddd",
         elevation: 2,
         margin: 15,
+        marginBottom: 50,
         backgroundColor: "#f9fafb",
         flex: 1,
       }}

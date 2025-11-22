@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/Tofes.png",
     "scheme": "tofes",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "jsEngine": "hermes",
     "ios": {

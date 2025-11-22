@@ -212,7 +212,7 @@ export default function AdminFixturesScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 12, backgroundColor: "#f5f5f5" }}>
+    <View style={{ flex: 1, padding: 12, marginBottom: 50, backgroundColor: "#f5f5f5" }}>
       <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>Admin - Matchs</Text>
         <TouchableOpacity

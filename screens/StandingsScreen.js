@@ -217,12 +217,13 @@ export default function StandingsScreen() {
         <>
           <Picker
             selectedValue={selectedPoule}
-            style={styles.dropdown}
+            style={[styles.dropdown, { color: "#1E293B" }]}
+            dropdownIconColor="#1E293B"
             onValueChange={(itemValue) => setSelectedPoule(itemValue)}
           >
-            <Picker.Item label="Poule A" value="Poule A" />
-            <Picker.Item label="Poule B" value="Poule B" />
-            <Picker.Item label="Poule C" value="Poule C" />
+            <Picker.Item label="Poule A" value="Poule A" color="#1E293B" />
+            <Picker.Item label="Poule B" value="Poule B" color="#1E293B" />
+            <Picker.Item label="Poule C" value="Poule C" color="#1E293B" />
           </Picker>
 
           {renderHeader()}
@@ -426,6 +427,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexWrap: "wrap",
     marginTop: 15,
+    marginBottom: 15,
   },
   colorBox: {
     width: 20,
