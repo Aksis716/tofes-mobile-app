@@ -72,8 +72,8 @@ export default function AdminNotificationScreen() {
 
   const pickMedia = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.Images,
       allowsMultipleSelection: true,
-      mediaTypes: ImagePicker.MediaType.all,
       quality: 0.8,
     });
 
