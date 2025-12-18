@@ -23,8 +23,12 @@ export default function TeamDetailsScreen({ route }) {
   const teamLogos = {
     Avions: require("../assets/images/teams/AVIONS.png"),
     EDA: require("../assets/images/teams/EDA.png"),
+    ETAA: require("../assets/images/teams/ETAA.png"),
     CRDA: require("../assets/images/teams/CRDA.png"),
-    CFA: require("../assets/images/teams/CFA.png"),
+    BFA: require("../assets/images/teams/CFA.png"),
+    MAF: require("../assets/images/teams/MAF.png"),
+    Chasse: require("../assets/images/teams/Chasse.png"),
+    Infirmerie: require("../assets/images/teams/Infirmerie.png"),
     Hélicos: require("../assets/images/teams/Helicos.png"),
     EMAA: require("../assets/images/teams/EMAA.png"),
     FUAES: require("../assets/images/teams/FUAES.png"),
@@ -194,6 +198,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+    marginBottom: 40,
   },
   teamName: {
     fontWeight: "bold",

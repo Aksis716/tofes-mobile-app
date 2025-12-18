@@ -33,14 +33,18 @@ export default function MatchScreen({ route }) {
   const [status, setStatus] = useState("upcoming");
 
   const teamLogos = {
-    Avions: require("../assets/images/teams/AVIONS.png"),
+    AVIONS: require("../assets/images/teams/AVIONS.png"),
     EDA: require("../assets/images/teams/EDA.png"),
+    ETAA: require("../assets/images/teams/ETAA.png"),
     CRDA: require("../assets/images/teams/CRDA.png"),
-    CFA: require("../assets/images/teams/CFA.png"),
-    Helicos: require("../assets/images/teams/Helicos.png"),
+    BFA: require("../assets/images/teams/CFA.png"),
+    MAF: require("../assets/images/teams/MAF.png"),
+    INFIRMERIE: require("../assets/images/teams/Infirmerie.png"),
+    CHASSE: require("../assets/images/teams/Chasse.png"),
+    HELICOS: require("../assets/images/teams/Helicos.png"),
     EMAA: require("../assets/images/teams/EMAA.png"),
     FUAES: require("../assets/images/teams/FUAES.png"),
-    Drones: require("../assets/images/teams/Drones.png"),
+    DRONES: require("../assets/images/teams/Drones.png"),
     OSA: require("../assets/images/teams/OSA.png"),
     MGX: require("../assets/images/teams/MGX.png"),
     EMART: require("../assets/images/teams/EMART.png"),

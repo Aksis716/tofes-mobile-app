@@ -25,67 +25,61 @@ import { auth, db } from "../../firebaseConfig";
 
 export default function CommentsTab({ match }) {
   const matchId = match?.id || match?.matchId || match?.match?.id;
+
   const [comments, setComments] = useState([]);
-  const [author, setAuthor] = useState("");
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [userRole, setUserRole] = useState(null); // ✅ track role
-  const [currentUser, setCurrentUser] = useState(null);
 
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentName, setCurrentName] = useState("");
+  const [currentEmail, setCurrentEmail] = useState("");
+
+  const [editingComment, setEditingComment] = useState(null); // ← NEW
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // ✅ Fetch user role when logged in
+  // Load user info
   useEffect(() => {
     const user = auth.currentUser;
     setCurrentUser(user);
 
-    const fetchRole = async () => {
-      if (user) {
+    if (user) {
+      setCurrentEmail(user.email);
+
+      const fetchUserData = async () => {
         try {
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
-            setUserRole(userDoc.data().role);
+            const data = userDoc.data();
+            setCurrentName(data.fullName || data.name || "Utilisateur");
           }
         } catch (err) {
-          console.error("Erreur de récupération du rôle :", err);
+          console.error("Erreur récupération utilisateur :", err);
         }
-      }
-    };
+      };
 
-    fetchRole();
+      fetchUserData();
+    }
   }, []);
 
-  // 🔹 Real-time listener for comments
+  // Load comments
   useEffect(() => {
-    if (!matchId) {
-      setComments([]);
-      return;
-    }
+    if (!matchId) return setComments([]);
 
     const ref = doc(db, "fixtures", matchId);
-    const unsubscribe = onSnapshot(
-      ref,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          const fetched = Array.isArray(data.comments) ? data.comments : [];
-          const sorted = fetched
-            .slice()
-            .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
-          setComments(sorted);
-        } else {
-          setComments([]);
-        }
-      },
-      (err) => {
-        console.error("Error fetching comments:", err);
-        Alert.alert("Erreur", "Impossible de charger les commentaires.");
-      }
-    );
 
-    return () => unsubscribe(); // Clean up listener
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
+      if (snapshot.exists()) {
+        const fetched = snapshot.data().comments || [];
+        const sorted = fetched
+          .slice()
+          .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+        setComments(sorted);
+      } else setComments([]);
+    });
+
+    return () => unsubscribe();
   }, [matchId]);
 
   const toggleForm = () => {
@@ -97,13 +91,16 @@ export default function CommentsTab({ match }) {
     }).start();
   };
 
-  const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const makeId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
   const resetForm = () => {
-    setAuthor("");
     setTitle("");
     setText("");
+    setEditingComment(null); // reset edit mode
   };
 
+  // ADD NEW COMMENT
   const handleAddComment = async () => {
     if (!title.trim() || !text.trim()) {
       Alert.alert("Champs manquants", "Merci d'indiquer un titre et un texte.");
@@ -112,7 +109,8 @@ export default function CommentsTab({ match }) {
 
     const newComment = {
       id: makeId(),
-      author: author?.trim() || "Anonyme",
+      author: currentName,
+      authorEmail: currentEmail,
       title: title.trim(),
       text: text.trim(),
       addedAt: new Date().toISOString(),
@@ -120,11 +118,6 @@ export default function CommentsTab({ match }) {
 
     setComments((prev) => [newComment, ...prev]);
     resetForm();
-
-    if (!matchId) {
-      Alert.alert("Erreur", "Impossible d’enregistrer le commentaire (match ID manquant).");
-      return;
-    }
 
     try {
       setSaving(true);
@@ -134,11 +127,11 @@ export default function CommentsTab({ match }) {
     } catch (err) {
       setSaving(false);
       console.error(err);
-      Alert.alert("Erreur", "Le commentaire n’a pas pu être enregistré dans la base.");
+      Alert.alert("Erreur", "Le commentaire n’a pas pu être enregistré.");
     }
   };
 
-  // 🔹 Delete comment
+  // DELETE COMMENT (own comments only)
   const handleDeleteComment = async (comment) => {
     Alert.alert(
       "Supprimer le commentaire",
@@ -162,37 +155,88 @@ export default function CommentsTab({ match }) {
     );
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.commentCard}>
-      <View style={styles.headerRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {item.author ? item.author[0].toUpperCase() : "A"}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.commentTitle}>{item.title}</Text>
-          <Text style={styles.commentAuthor}>{item.author}</Text>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text style={styles.commentTime}>
-            {new Date(item.addedAt).toLocaleString()}
-          </Text>
+  // ENABLE EDIT MODE
+  const startEditing = (comment) => {
+    setEditingComment(comment);
+    setTitle(comment.title);
+    setText(comment.text);
+    if (!showForm) toggleForm();
+  };
 
-          {/* ✅ Delete icon only for admin or creator */}
-          {currentUser && (userRole === "admin" || userRole === "creator") && (
-            <TouchableOpacity
-              onPress={() => handleDeleteComment(item)}
-              style={{ marginLeft: 8 }}
-            >
-              <Ionicons name="trash" size={20} color="#ff4444" />
-            </TouchableOpacity>
-          )}
+  // APPLY EDIT
+  const handleEditComment = async () => {
+    if (!editingComment) return;
+
+    const updated = {
+      ...editingComment,
+      title: title.trim(),
+      text: text.trim(),
+    };
+
+    try {
+      setSaving(true);
+      const ref = doc(db, "fixtures", matchId);
+
+      await updateDoc(ref, { comments: arrayRemove(editingComment) });
+      await updateDoc(ref, { comments: arrayUnion(updated) });
+
+      setSaving(false);
+      resetForm();
+      toggleForm();
+    } catch (err) {
+      setSaving(false);
+      console.error(err);
+      Alert.alert("Erreur", "Impossible de modifier le commentaire.");
+    }
+  };
+
+  // RENDER ITEM
+  const renderItem = ({ item }) => {
+    const isOwner = item.authorEmail === currentEmail;
+
+    return (
+      <View style={styles.commentCard}>
+        <View style={styles.headerRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.author ? item.author[0].toUpperCase() : "A"}
+            </Text>
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.commentTitle}>{item.title}</Text>
+            <Text style={styles.commentAuthor}>{item.author}</Text>
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={styles.commentTime}>
+              {new Date(item.addedAt).toLocaleString()}
+            </Text>
+
+            {isOwner && (
+              <>
+                <TouchableOpacity
+                  onPress={() => startEditing(item)}
+                  style={{ marginLeft: 8 }}
+                >
+                  <Ionicons name="create" size={20} color="#1077a7" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => handleDeleteComment(item)}
+                  style={{ marginLeft: 8 }}
+                >
+                  <Ionicons name="trash" size={20} color="#ff4444" />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
+
+        <Text style={styles.commentText}>{item.text}</Text>
       </View>
-      <Text style={styles.commentText}>{item.text}</Text>
-    </View>
-  );
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -217,7 +261,6 @@ export default function CommentsTab({ match }) {
           />
         )}
 
-        {/* Slide-up Add Comment Form */}
         {showForm && (
           <Animated.View
             style={[
@@ -234,14 +277,9 @@ export default function CommentsTab({ match }) {
               },
             ]}
           >
-            <Text style={styles.formHeader}>Ajouter un commentaire</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Votre nom (optionnel)"
-              value={author}
-              onChangeText={setAuthor}
-            />
+            <Text style={styles.formHeader}>
+              {editingComment ? "Modifier le commentaire" : "Ajouter un commentaire"}
+            </Text>
 
             <TextInput
               style={styles.input}
@@ -268,20 +306,21 @@ export default function CommentsTab({ match }) {
 
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: "#1077a7" }]}
-                onPress={handleAddComment}
+                onPress={editingComment ? handleEditComment : handleAddComment}
                 disabled={saving}
               >
                 {saving ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>Publier</Text>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>
+                    {editingComment ? "Modifier" : "Publier"}
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>
           </Animated.View>
         )}
 
-        {/* 🔹 Floating Add Comment Button — visible only if logged in */}
         {currentUser && (
           <TouchableOpacity style={styles.fab} onPress={toggleForm}>
             <Ionicons
@@ -291,13 +330,11 @@ export default function CommentsTab({ match }) {
             />
           </TouchableOpacity>
         )}
-
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-// ✅ All styles remain unchanged
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5", padding: 10 },
   emptyBox: { alignItems: "center", marginTop: 50 },
@@ -352,10 +389,6 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
   },
   formHeader: {
     fontWeight: "700",

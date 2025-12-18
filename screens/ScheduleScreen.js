@@ -35,14 +35,18 @@ export default function ScheduleScreen() {
   const [error, setError] = useState(null);
 
   const teamLogos = {
-    Avions: require("../assets/images/teams/AVIONS.png"),
+    AVIONS: require("../assets/images/teams/AVIONS.png"),
     EDA: require("../assets/images/teams/EDA.png"),
+    ETAA: require("../assets/images/teams/ETAA.png"),
     CRDA: require("../assets/images/teams/CRDA.png"),
-    CFA: require("../assets/images/teams/CFA.png"),
-    Helicos: require("../assets/images/teams/Helicos.png"),
+    BFA: require("../assets/images/teams/CFA.png"),
+    MAF: require("../assets/images/teams/MAF.png"),
+    CHASSE: require("../assets/images/teams/Chasse.png"),
+    INFIRMERIE: require("../assets/images/teams/Infirmerie.png"),
+    HELICOS: require("../assets/images/teams/Helicos.png"),
     EMAA: require("../assets/images/teams/EMAA.png"),
     FUAES: require("../assets/images/teams/FUAES.png"),
-    Drones: require("../assets/images/teams/Drones.png"),
+    DRONES: require("../assets/images/teams/Drones.png"),
     OSA: require("../assets/images/teams/OSA.png"),
     MGX: require("../assets/images/teams/MGX.png"),
     EMART: require("../assets/images/teams/EMART.png"),
@@ -135,6 +139,8 @@ export default function ScheduleScreen() {
           ? styles.groupBPhase
           : String(phase).includes("Poule C")
           ? styles.groupCPhase
+          : String(phase).includes("Poule D")
+          ? styles.groupDPhase
           : styles.defaultPhase;
 
       return (
@@ -224,6 +230,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: scale(15),
     backgroundColor: "#f5f5f5",
+    marginTop: scale(-20),
   },
   title: {
     fontSize: moderateScale(17),
@@ -287,20 +294,21 @@ const styles = StyleSheet.create({
   groupAPhase: { backgroundColor: "#1077a7ff" },
   groupBPhase: { backgroundColor: "#10a74aff" },
   groupCPhase: { backgroundColor: "#a71077ff" },
+  groupDPhase: { backgroundColor: "#c44513ff" },
   semiPhase: { backgroundColor: "#f5a623" },
   finalPhase: { backgroundColor: "#d0021b" },
   defaultPhase: { backgroundColor: "#4d6145ff" },
   teamsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-evenly",
+    justifyContent: "space-between",
     paddingVertical: scale(6),
   },
   team: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
-    width: width * 0.28,
+    width: width * 0.35,
   },
   teamLogo: {
     width: scale(45),

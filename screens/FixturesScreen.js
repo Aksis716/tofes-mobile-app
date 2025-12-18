@@ -24,14 +24,18 @@ export default function FixturesScreen() {
   const { width, height, fontScale } = useWindowDimensions();
 
   const teamLogos = {
-    Avions: require("../assets/images/teams/AVIONS.png"),
+    AVIONS: require("../assets/images/teams/AVIONS.png"),
     EDA: require("../assets/images/teams/EDA.png"),
+    ETAA: require("../assets/images/teams/ETAA.png"),
     CRDA: require("../assets/images/teams/CRDA.png"),
-    CFA: require("../assets/images/teams/CFA.png"),
-    Helicos: require("../assets/images/teams/Helicos.png"),
+    BFA: require("../assets/images/teams/CFA.png"),
+    MAF: require("../assets/images/teams/MAF.png"),
+    CHASSE: require("../assets/images/teams/Chasse.png"),
+    INFIRMERIE: require("../assets/images/teams/Infirmerie.png"),
+    HELICOS: require("../assets/images/teams/Helicos.png"),
     EMAA: require("../assets/images/teams/EMAA.png"),
     FUAES: require("../assets/images/teams/FUAES.png"),
-    Drones: require("../assets/images/teams/Drones.png"),
+    DRONES: require("../assets/images/teams/Drones.png"),
     OSA: require("../assets/images/teams/OSA.png"),
     MGX: require("../assets/images/teams/MGX.png"),
     EMART: require("../assets/images/teams/EMART.png"),
@@ -43,6 +47,7 @@ export default function FixturesScreen() {
     'Poule A',
     'Poule B',
     'Poule C',
+    'Poule D',
     'Quarts de Finale',
     'Demi-Finales',
     'Finale',
@@ -171,6 +176,7 @@ export default function FixturesScreen() {
             <Text style={[styles.expandedText, { fontSize: moderateScale(14, width) }]}>👨‍🏫 Coach {nextMatch.team1 || '1'} : {nextMatch.coach1 || 'À confirmer'}</Text>
             <Text style={[styles.expandedText, { fontSize: moderateScale(14, width) }]}>👨‍🏫 Coach {nextMatch.team2 || '2'} : {nextMatch.coach2 || 'À confirmer'}</Text>
             <Text style={[styles.expandedText, { fontSize: moderateScale(14, width) }]}>⚖️ Arbitre : {nextMatch.arbitre || 'À confirmer'}</Text>
+            <Text style={[styles.expandedText, { fontSize: moderateScale(14, width) }]}>⚖️ Commissaire : SLT Moustapha Abdoulkarim</Text>
             <Text style={[styles.expandedText, { fontSize: moderateScale(14, width) }]}>🏟️ Lieu : {nextMatch.location || 'Terrain Football Base Aérienne 101'}</Text>
 
             <TouchableOpacity
@@ -247,7 +253,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  bannerLogo: { resizeMode: "contain" },
+  bannerLogo: { resizeMode: "contain", marginHorizontal: 5 },
   bannerTextContainer: { alignItems: "center", flex: 1 },
   bannerTitle: { color: "#fff", marginTop: 15 },
   bannerTeams: { color: "#fff", fontWeight: "bold", marginTop: 20 },

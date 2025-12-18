@@ -16,6 +16,25 @@ export default function HomeScreen({ navigation }) {
   const [countdown, setCountdown] = useState("");
   const { width, height } = useWindowDimensions();
 
+  const teamLogos = {
+    AVIONS: require("../assets/images/teams/AVIONS.png"),
+    EDA: require("../assets/images/teams/EDA.png"),
+    ETAA: require("../assets/images/teams/ETAA.png"),
+    CRDA: require("../assets/images/teams/CRDA.png"),
+    BFA: require("../assets/images/teams/CFA.png"),
+    MAF: require("../assets/images/teams/MAF.png"),
+    CHASSE: require("../assets/images/teams/Chasse.png"),
+    INFIRMERIE: require("../assets/images/teams/Infirmerie.png"),
+    HELICOS: require("../assets/images/teams/Helicos.png"),
+    EMAA: require("../assets/images/teams/EMAA.png"),
+    FUAES: require("../assets/images/teams/FUAES.png"),
+    DRONES: require("../assets/images/teams/Drones.png"),
+    OSA: require("../assets/images/teams/OSA.png"),
+    MGX: require("../assets/images/teams/MGX.png"),
+    EMART: require("../assets/images/teams/EMART.png"),
+    default: require("../assets/images/teams/TeamLogo.png"),
+  };
+
   // 📏 Responsive scaling based on screen width
   const scale = width / 375; // 375 = iPhone X baseline
   const fontScale = Math.min(scale * 1.1, 1.3);
@@ -193,15 +212,38 @@ export default function HomeScreen({ navigation }) {
                   {countdown}
                 </Text>
               </Text>
-              <Text
-                style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}
-              >
-                {nextMatch.team1} vs {nextMatch.team2}
-              </Text>
+
+              {/* ✅ TEAM LOGOS + NAMES */}
+              <View style={styles.matchRow}>
+                <View style={styles.teamRow}>
+                  <Image
+                    source={teamLogos[nextMatch.team1] || teamLogos.default}
+                    style={[styles.teamLogo, { width: 18 * scale, height: 18 * scale }]}
+                  />
+                  <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
+                    {nextMatch.team1}
+                  </Text>
+                </View>
+
+                <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale, marginHorizontal: 6 }]}>
+                  vs
+                </Text>
+
+                <View style={styles.teamRow}>
+                  <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
+                    {nextMatch.team2}
+                  </Text>
+                  <Image
+                    source={teamLogos[nextMatch.team2] || teamLogos.default}
+                    style={[styles.teamLogo, { width: 18 * scale, height: 18 * scale }]}
+                  />
+                </View>
+              </View>
+
             </>
           ) : (
             <Text
-              style={[styles.cardSubtitle, { fontSize: 13 * fontScale }]}
+              style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}
             >
               Aucun match à venir
             </Text>
@@ -284,5 +326,18 @@ const styles = StyleSheet.create({
   countdown: {
     fontWeight: "bold",
     color: "#1077a7ff",
+  },
+  matchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+  teamRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  teamLogo: {
+    marginRight: 6,
+    resizeMode: "contain",
   },
 });

@@ -8,17 +8,25 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import {
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { db } from "../firebaseConfig";
 
 export default function NotificationScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
+  const [fullscreenMedia, setFullscreenMedia] = useState(null);
+  const listRef = useRef(null);
 
   useEffect(() => {
-    // Query notifications, most recent first
     const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"));
 
-    // Real-time listener
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map((doc) => {
         const data = doc.data();
@@ -27,8 +35,6 @@ export default function NotificationScreen({ navigation }) {
           ...data,
           createdAt: data.createdAt?.seconds
             ? new Date(data.createdAt.seconds * 1000)
-            : data.createdAt
-            ? new Date(data.createdAt)
             : new Date(0),
         };
       });
@@ -36,7 +42,6 @@ export default function NotificationScreen({ navigation }) {
       setNotifications(list);
     });
 
-    // Clean up when leaving the screen
     return () => unsubscribe();
   }, []);
 
@@ -49,49 +54,131 @@ export default function NotificationScreen({ navigation }) {
     }
   };
 
-  const listRef = useRef(null);
-
   return (
-    <FlatList
-      ref={listRef}
-      onContentSizeChange={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
-      data={notifications}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() => markAsReadAndNavigate(item)}
+    <>
+      <FlatList
+        ref={listRef}
+        onContentSizeChange={() =>
+          listRef.current?.scrollToOffset({ offset: 0, animated: true })
+        }
+        data={notifications}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => markAsReadAndNavigate(item)}
+            style={{
+              flexDirection: "row",
+              padding: 15,
+              marginHorizontal: 8,
+              marginVertical: 5,
+              borderRadius: 15,
+              borderWidth: 1,
+              borderColor: "#ddd",
+              elevation: 2,
+              backgroundColor: item.read ? "#fff" : "#eef6ff",
+            }}
+          >
+            <Ionicons
+              name={item.icon || "notifications-outline"}
+              size={28}
+              color="#1077a7"
+              style={{ marginRight: 12 }}
+            />
+
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: "bold", fontSize: 15 }}>
+                {item.title}
+              </Text>
+              <Text>{item.body}</Text>
+
+              {/* ---- Images / Videos in Notification ---- */}
+              {item.media?.length > 0 && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    marginTop: 10,
+                  }}
+                >
+                  {item.media.map((m, index) =>
+                    m.type === "image" ? (
+                      <Pressable
+                        key={index}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          setFullscreenMedia(m.url);
+                        }}
+                      >
+                        <Image
+                          source={{ uri: m.url }}
+                          style={{
+                            width: 90,
+                            height: 90,
+                            borderRadius: 10,
+                            marginRight: 6,
+                            marginBottom: 6,
+                            borderWidth: 1,
+                            borderColor: "#ccc",
+                          }}
+                        />
+                      </Pressable>
+                    ) : (
+                      <View
+                        key={index}
+                        style={{
+                          width: 90,
+                          height: 90,
+                          borderRadius: 10,
+                          marginRight: 6,
+                          marginBottom: 6,
+                          backgroundColor: "#ddd",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text>🎥</Text>
+                      </View>
+                    )
+                  )}
+                </View>
+              )}
+
+              <Text style={{ color: "gray", fontSize: 12, marginTop: 6 }}>
+                {item.createdAt?.toLocaleString?.() || ""}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+
+      {/* ---------- Fullscreen Image Modal ---------- */}
+      <Modal
+        visible={!!fullscreenMedia}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFullscreenMedia(null)}
+      >
+        <Pressable
           style={{
-            flexDirection: "row",
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.9)",
+            justifyContent: "center",
             alignItems: "center",
-            padding: 15,
-            marginBottom: 5,
-            marginTop: 5,
-            marginHorizontal: 5,
-            borderBottomWidth: 1,
-            borderRadius: 15,
-            elevation: 2,
-            borderWidth: 1,
-            borderColor: "#ddd",
-            backgroundColor: item.read ? "#fff" : "#eef6ff",
           }}
+          onPress={() => setFullscreenMedia(null)}
         >
-          <Ionicons
-            name={item.icon || "notifications-outline"}
-            size={28}
-            color="#1077a7"
-            style={{ marginRight: 10 }}
+          <Image
+            source={{ uri: fullscreenMedia }}
+            style={{
+              width: "90%",
+              height: "80%",
+              resizeMode: "contain",
+            }}
           />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontWeight: "bold" }}>{item.title}</Text>
-            <Text>{item.body}</Text>
-            <Text style={{ color: "gray", fontSize: 12 }}>
-              {item.createdAt instanceof Date
-                ? item.createdAt.toLocaleString()
-                : "Date not available"}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      )}
-    />
+        </Pressable>
+      </Modal>
+    </>
   );
 }

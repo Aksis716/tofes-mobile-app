@@ -45,21 +45,9 @@ export default function AdminTablesScreen() {
       const assistsSnap = await getDocs(collection(db, "assists"));
 
       const poulesList = poulesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
       const normalizedPoules = poulesList.map((p) => {
-        const teams = Array.isArray(p.teams) ? [...p.teams] : [];
-        while (teams.length < 4) {
-          teams.push({
-            team: `Team ${teams.length + 1}`,
-            pts: 0,
-            mp: 0,
-            w: 0,
-            d: 0,
-            l: 0,
-            gf: 0,
-            ga: 0,
-            gd: 0,
-          });
-        }
+        const teams = Array.isArray(p.teams) ? p.teams : [];
         return { ...p, teams };
       });
 

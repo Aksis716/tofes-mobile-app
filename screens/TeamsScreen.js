@@ -21,13 +21,17 @@ export default function TeamsScreen() {
 
   // ✅ dynamic scaling factors
   const scale = width / 400; // base on medium phone
-  const numColumns = width < 400 ? 2 : width < 700 ? 3 : 4;
+  const numColumns = width < 400 ? 3 : width < 700 ? 4 : 5;
 
   const teamLogos = {
     Avions: require("../assets/images/teams/AVIONS.png"),
     EDA: require("../assets/images/teams/EDA.png"),
+    ETAA: require("../assets/images/teams/ETAA.png"),
     CRDA: require("../assets/images/teams/CRDA.png"),
-    CFA: require("../assets/images/teams/CFA.png"),
+    BFA: require("../assets/images/teams/CFA.png"),
+    MAF: require("../assets/images/teams/MAF.png"),
+    Infirmerie: require("../assets/images/teams/Infirmerie.png"),
+    Chasse: require("../assets/images/teams/Chasse.png"),
     Hélicos: require("../assets/images/teams/Helicos.png"),
     EMAA: require("../assets/images/teams/EMAA.png"),
     FUAES: require("../assets/images/teams/FUAES.png"),
@@ -62,8 +66,9 @@ export default function TeamsScreen() {
       style={[
         styles.teamCard,
         {
-          padding: 8 * scale,
-          marginHorizontal: 8 * scale,
+          paddingHorizontal: 1 * scale,
+          paddingVertical: 10 * scale,
+          marginHorizontal: 5 * scale,
           marginVertical: 10 * scale,
           borderRadius: 24 * scale,
         },
@@ -73,8 +78,8 @@ export default function TeamsScreen() {
       <Image
         source={teamLogos[item.name] || teamLogos.default}
         style={{
-          width: 75 * scale,
-          height: 75 * scale,
+          width: 60 * scale,
+          height: 60 * scale,
           marginBottom: 4 * scale,
         }}
         resizeMode="contain"
@@ -113,9 +118,12 @@ export default function TeamsScreen() {
           },
         ]}
       >
-        Les douze (12) équipes retenues pour la compétition sont indiquées ci-dessous. Elles
-        s’affronteront dans un système de poules avant de passer aux matchs de qualification
-        directe. Les détails sur chaque équipe peuvent être obtenus en cliquant sur son logo.
+        Les quatorze (14) équipes retenues pour la compétition sont indiquées ci-dessous. 
+              
+        Elles s’affronteront dans un système de poules avant de passer aux matchs de qualification
+        directe. 
+        
+        Les détails sur chaque équipe peuvent être obtenus en cliquant sur son logo.
       </Text>
 
       <FlatList

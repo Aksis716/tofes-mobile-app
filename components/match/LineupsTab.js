@@ -1,5 +1,6 @@
+import { doc, getDoc } from "firebase/firestore";
 import { User } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -7,13 +8,39 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  View
+  View,
 } from "react-native";
+import { auth, db } from "../../firebaseConfig";
 
 export default function LineupsTab(props) {
   const match = props.match || props.route?.params?.match;
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const [showBench, setShowBench] = useState(false);
+
+  /* ---------- User state ---------- */
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentRole, setCurrentRole] = useState(null);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    setCurrentUser(user);
+
+    if (user) {
+      const fetchUserData = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setCurrentRole(data.role);
+          }
+        } catch (err) {
+          console.error("Erreur récupération utilisateur :", err);
+        }
+      };
+
+      fetchUserData();
+    }
+  }, []);
 
   if (!match) {
     return (
@@ -23,46 +50,62 @@ export default function LineupsTab(props) {
     );
   }
 
+  /* ---------- Lineup visibility rules ---------- */
+  const matchDate = match.date?.toDate
+    ? match.date.toDate()
+    : new Date(match.date);
+
+  const now = new Date();
+  const diffHours = (matchDate - now) / (1000 * 60 * 60);
+
+  const isAdminOrCreator =
+    currentUser && (currentRole === "admin" || currentRole === "creator");
+
+  const isAfterMatch = now >= matchDate;
+  const isWithin12Hours = diffHours <= 12;
+
+  const lineupsVisible =
+    isAfterMatch || isWithin12Hours || isAdminOrCreator;
+
+  /* ---------- Match data ---------- */
   const players1 = Array.isArray(match.players1) ? match.players1 : [];
   const players2 = Array.isArray(match.players2) ? match.players2 : [];
 
   const coach1 = match.coach1 || match.coachTeam1 || "Coach équipe 1";
   const coach2 = match.coach2 || match.coachTeam2 || "Coach équipe 2";
 
-  // ✅ responsive pitch sizing
+  /* ---------- Responsive sizing ---------- */
   const pitchWidth = Math.min(width * 0.94, 900);
-  const pitchAspect = 1.5;
-  const pitchHeight = Math.round(pitchWidth * pitchAspect);
+  const pitchHeight = pitchWidth * 1.5;
+  const scale = width / 390;
 
-  // scale helper based on screen width
-  const scale = width / 390; // iPhone 12 baseline
-
+  /* ---------- 9-player layout ---------- */
   const layoutPositions = [
-    { x: 0.46, y: 0.075 },
-    { x: 0.16, y: 0.22 },
-    { x: 0.46, y: 0.19 },
-    { x: 0.76, y: 0.22 },
-    { x: 0.16, y: 0.38 },
-    { x: 0.46, y: 0.31 },
-    { x: 0.76, y: 0.38 },
-    { x: 0.46, y: 0.43 },
+    { x: 0.46, y: 0.08 },
+    { x: 0.18, y: 0.16 },
+    { x: 0.46, y: 0.20 },
+    { x: 0.74, y: 0.16 },
+    { x: 0.12, y: 0.30 },
+    { x: 0.46, y: 0.32 },
+    { x: 0.80, y: 0.30 },
+    { x: 0.30, y: 0.42 },
+    { x: 0.62, y: 0.42 },
   ];
 
-  function mapPlayersToLayout(players) {
-    const mapped = new Array(8).fill(null);
+  /* ---------- Helpers ---------- */
+  const getFirstTwoNames = (name = "") =>
+    name.trim().split(/\s+/).slice(0, 2).join(" ");
+
+  const mapPlayersToLayout = (players) => {
+    const mapped = new Array(9).fill(null);
+
     players.forEach((p) => {
       const pos = Number(p.position);
-      if (!Number.isNaN(pos) && pos >= 1 && pos <= 8) mapped[pos - 1] = p;
+      if (pos >= 1 && pos <= 9) mapped[pos - 1] = p;
     });
-    const leftovers = players.filter((p) => {
-      const pos = Number(p.position);
-      return Number.isNaN(pos) || pos < 1 || pos > 8 || mapped[pos - 1] !== p;
-    });
-    for (let i = 0; i < mapped.length && leftovers.length > 0; i++) {
-      if (!mapped[i]) mapped[i] = leftovers.shift();
-    }
+
     return mapped;
-  }
+  };
 
   const team1Layout = mapPlayersToLayout(players1);
   const team2Layout = mapPlayersToLayout(players2);
@@ -70,141 +113,138 @@ export default function LineupsTab(props) {
   const playerBadge = (p) => {
     if (!p) return "";
     let badge = "";
-    if (Array.isArray(p.goals) && p.goals.length > 0) badge += `⚽${p.goals.length} `;
+    if (Array.isArray(p.goals) && p.goals.length) badge += `⚽${p.goals.length} `;
     if (p.yellow) badge += "🟨";
     if (p.red) badge += "🟥";
     if (p.injury) badge += " 🚑";
     return badge.trim();
   };
 
-  const renderPlayer = (p, idx, teamColor, flipVertical = false) => {
-    const layout = layoutPositions[idx];
-    if (!layout) return null;
+  const renderPlayer = (p, idx, color, flip) => {
+    if (!lineupsVisible) return null;
 
-    const x = layout.x * pitchWidth;
-    const y = layout.y * pitchHeight;
-    const posY = flipVertical ? pitchHeight - y : y;
+    const pos = layoutPositions[idx];
+    if (!pos) return null;
+
+    const x = pos.x * pitchWidth;
+    const y = flip ? pitchHeight - pos.y * pitchHeight : pos.y * pitchHeight;
 
     return (
       <View
-        key={(p && (p.id || p.name)) || `empty-${idx}-${flipVertical ? "t2" : "t1"}`}
+        key={`${idx}-${flip}`}
         style={[
           styles.playerWrapper,
           {
-            left: Math.round(x - 20 * scale),
-            top: Math.round(posY - 20 * scale),
-            width: 70 * scale,
+            left: x - 22 * scale,
+            top: y - 22 * scale,
+            width: 75 * scale,
           },
         ]}
       >
-        <View style={styles.iconContainer}>
-          <View
-            style={[
-              styles.iconBox,
-              { backgroundColor: teamColor, width: 36 * scale, height: 36 * scale, borderRadius: 18 * scale },
-            ]}
-          >
-            <User color="#fff" size={18 * scale} />
-            {p && playerBadge(p) ? (
-              <View
-                style={[
-                  styles.badgeContainer,
-                  {
-                    top: -2 * scale,
-                    right: -8 * scale,
-                    paddingHorizontal: 3 * scale,
-                    paddingVertical: 1 * scale,
-                  },
-                ]}
-              >
-                <Text style={[styles.badgeText, { fontSize: 9 * scale }]}>{playerBadge(p)}</Text>
-              </View>
-            ) : null}
-          </View>
+        <View
+          style={[
+            styles.iconBox,
+            {
+              backgroundColor: color,
+              width: 36 * scale,
+              height: 36 * scale,
+              borderRadius: 18 * scale,
+            },
+          ]}
+        >
+          <User color="#fff" size={18 * scale} />
+          {p && playerBadge(p) ? (
+            <View style={[styles.badgeContainer, { top: -4, right: -10 }]}>
+              <Text style={[styles.badgeText, { fontSize: 9 * scale }]}>
+                {playerBadge(p)}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
-        <Text style={[styles.playerNumber, { fontSize: 11 * scale, borderRadius: 6 * scale }]}>
+        <Text style={[styles.playerNumber, { fontSize: 11 * scale }]}>
           {p?.position ?? "–"}
         </Text>
 
-        <Text style={[styles.playerName, { fontSize: 12.5 * scale }]} numberOfLines={1}>
-          {p?.name ?? ""}
+        <Text
+          style={[styles.playerName, { fontSize: 12 * scale }]}
+          numberOfLines={1}
+        >
+          {p ? getFirstTwoNames(p.name) : ""}
         </Text>
       </View>
     );
   };
 
+  /* ---------- Pitch ---------- */
   const renderPitch = () => (
     <>
-      <View style={{ width: pitchWidth, alignItems: "center", marginBottom: 6 * scale }}>
-        <Text style={[styles.coachTopText, { fontSize: 14.5 * scale }]}>👨‍🏫 Coach: {coach1}</Text>
-      </View>
+      <Text style={[styles.coachTopText, { fontSize: 14 * scale }]}>
+        👨‍🏫 Coach: {coach1}
+      </Text>
 
       <View style={[styles.pitchContainer, { width: pitchWidth, height: pitchHeight }]}>
         <Image
-          source={require("../../assets/images/Lineups.png")}
+          source={
+            lineupsVisible
+              ? require("../../assets/images/Lineups.png")
+              : require("../../assets/images/NoLineups.png")
+          }
           style={{ width: pitchWidth, height: pitchHeight, position: "absolute" }}
           resizeMode="stretch"
         />
+
         {team1Layout.map((p, i) => renderPlayer(p, i, "#1077a7", false))}
         {team2Layout.map((p, i) => renderPlayer(p, i, "#a71010", true))}
+
+        {!lineupsVisible && (
+          <View style={styles.notPublishedContainer}>
+            <Text style={styles.notPublishedText}>
+              ⏳ Les compositions d'équipe ne sont pas encore publiées. Elles seront disponibles 12h avant le coup d'envoi du match.
+            </Text>
+          </View>
+        )}
       </View>
 
-      <View
-        style={{
-          width: pitchWidth,
-          alignItems: "center",
-          marginTop: 8 * scale,
-          marginBottom: 20 * scale,
-        }}
-      >
-        <Text style={[styles.coachBottomText, { fontSize: 14.5 * scale }]}>
-          👨‍🏫 Coach: {coach2}
-        </Text>
-      </View>
+      <Text style={[styles.coachBottomText, { fontSize: 14 * scale }]}>
+        👨‍🏫 Coach: {coach2}
+      </Text>
     </>
   );
 
-  const renderBench = () => (
-    <View
-      style={[
-        styles.benchContainer,
-        { width: pitchWidth, paddingVertical: 10 * scale, paddingHorizontal: 8 * scale },
-      ]}
-    >
-      <View style={styles.benchColumn}>
-        <Text style={[styles.benchTitle, { fontSize: 16 * scale }]}>{match.team1 || "Equipe 1"}</Text>
-        {players1
-          .filter((p) => Number(p.position) > 8 || Number.isNaN(Number(p.position)))
-          .map((p) => (
-            <Text key={p.id || p.name} style={[styles.benchItem, { fontSize: 13 * scale }]}>
-              {p.position ? `${p.position}. ` : ""}
-              {p.name} {playerBadge(p) ? `· ${playerBadge(p)}` : ""}
+  /* ---------- Bench ---------- */
+  const renderBench = () => {
+    if (!lineupsVisible) return null;
+
+    return (
+      <View style={[styles.benchContainer, { width: pitchWidth }]}>
+        {[players1, players2].map((team, idx) => (
+          <View key={idx} style={styles.benchColumn}>
+            <Text style={styles.benchTitle}>
+              {idx === 0 ? match.team1 : match.team2}
             </Text>
-          ))}
+            {team
+              .filter((p) => Number(p.position) >= 10)
+              .map((p) => (
+                <Text key={p.id || p.name} style={styles.benchItem}>
+                  {p.position}. {p.name}{" "}
+                  {playerBadge(p) ? `· ${playerBadge(p)}` : ""}
+                </Text>
+              ))}
+          </View>
+        ))}
       </View>
-      <View style={styles.benchColumn}>
-        <Text style={[styles.benchTitle, { fontSize: 16 * scale }]}>{match.team2 || "Equipe 2"}</Text>
-        {players2
-          .filter((p) => Number(p.position) > 8 || Number.isNaN(Number(p.position)))
-          .map((p) => (
-            <Text key={p.id || p.name} style={[styles.benchItem, { fontSize: 13 * scale }]}>
-              {p.position ? `${p.position}. ` : ""}
-              {p.name} {playerBadge(p) ? `· ${playerBadge(p)}` : ""}
-            </Text>
-          ))}
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={[styles.toggleContainer, { marginTop: 15 * scale, marginBottom: 15 * scale }]}>
+      <View style={styles.toggleContainer}>
         <TouchableOpacity
           style={[styles.toggleButton, !showBench && styles.activeButton]}
           onPress={() => setShowBench(false)}
         >
-          <Text style={[styles.toggleText, !showBench && styles.activeText, { fontSize: 14 * scale }]}>
+          <Text style={!showBench ? styles.activeText : styles.toggleText}>
             Titulaires
           </Text>
         </TouchableOpacity>
@@ -213,7 +253,7 @@ export default function LineupsTab(props) {
           style={[styles.toggleButton, showBench && styles.activeButton]}
           onPress={() => setShowBench(true)}
         >
-          <Text style={[styles.toggleText, showBench && styles.activeText, { fontSize: 14 * scale }]}>
+          <Text style={showBench ? styles.activeText : styles.toggleText}>
             Remplaçants
           </Text>
         </TouchableOpacity>
@@ -224,76 +264,76 @@ export default function LineupsTab(props) {
   );
 }
 
+/* ---------- Styles (unchanged) ---------- */
 const styles = StyleSheet.create({
-  scrollContainer: {
-    alignItems: "center",
-    paddingBottom: 30,
-    backgroundColor: "#f5f5f5",
-  },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  scrollContainer: { alignItems: "center", paddingBottom: 30 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  toggleContainer: {
-    flexDirection: "row",
-    borderRadius: 15,
-    overflow: "hidden",
-  },
+  toggleContainer: { flexDirection: "row", marginVertical: 16 },
   toggleButton: {
     paddingVertical: 6,
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
+    borderRadius: 16,
     borderWidth: 1,
-    marginHorizontal: 10,
     borderColor: "#1077a7",
+    marginHorizontal: 8,
     backgroundColor: "#fff",
-    borderRadius: 15,
   },
   toggleText: { color: "#1077a7", fontWeight: "600" },
   activeButton: { backgroundColor: "#1077a7" },
-  activeText: { color: "#fff" },
+  activeText: { color: "#fff", fontWeight: "600" },
 
   pitchContainer: {
-    position: "relative",
-    borderRadius: 14,
-    backgroundColor: "#eaf7ff",
+    borderRadius: 16,
     overflow: "hidden",
+    backgroundColor: "#eaf7ff",
     alignItems: "center",
     justifyContent: "center",
   },
-  playerWrapper: { position: "absolute", alignItems: "center" },
-  iconContainer: { alignItems: "center", justifyContent: "center" },
-  iconBox: { alignItems: "center", justifyContent: "center" },
-  badgeContainer: {
+
+  notPublishedContainer: {
     position: "absolute",
-    backgroundColor: "#fff",
-    borderRadius: 6,
+    bottom: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 12,
   },
+  notPublishedText: { color: "#fff", fontWeight: "600", textAlign: "center" },
+
+  playerWrapper: { position: "absolute", alignItems: "center" },
+  iconBox: { alignItems: "center", justifyContent: "center" },
+  badgeContainer: { position: "absolute", backgroundColor: "#fff", borderRadius: 6 },
   badgeText: { fontWeight: "600" },
 
   playerNumber: {
-    fontWeight: "700",
-    color: "#fff",
-    marginTop: -8,
     backgroundColor: "#000",
+    color: "#fff",
+    fontWeight: "700",
     paddingHorizontal: 4,
+    borderRadius: 6,
+    marginTop: -6,
   },
-  playerName: {
-    marginTop: -2,
-    fontWeight: "800",
-    textAlign: "center",
-    color: "#000",
+  playerName: { fontWeight: "800", color: "#000", textAlign: "center" },
+
+  coachTopText: { marginBottom: 6, color: "#0b5070", fontWeight: "600" },
+  coachBottomText: {
+    marginTop: 8,
+    color: "#7a0b0b",
+    fontWeight: "600",
+    marginBottom: 30,
   },
-  coachTopText: { fontWeight: "600", color: "#0b5070" },
-  coachBottomText: { fontWeight: "600", color: "#7a0b0b" },
 
   benchContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderRadius: 15,
-    backgroundColor: "#f8fcffff",
-    elevation: 3,
-    borderWidth: 0.5,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    padding: 14,
+    borderWidth: 1,
     borderColor: "#ddd",
   },
   benchColumn: { width: "48%", alignItems: "center" },
-  benchTitle: { fontWeight: "700", marginBottom: 20, marginTop: 20, color: "#1077a7" },
-  benchItem: { marginBottom: 20, color: "#333" },
+  benchTitle: { fontWeight: "700", marginBottom: 12, color: "#1077a7" },
+  benchItem: { marginBottom: 10, color: "#333" },
 });

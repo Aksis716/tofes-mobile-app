@@ -21,14 +21,18 @@ export default function StandingsScreen() {
   const [loading, setLoading] = useState(false);
 
   const teamLogos = {
-    Avions: require("../assets/images/teams/AVIONS.png"),
+    AVIONS: require("../assets/images/teams/AVIONS.png"),
     EDA: require("../assets/images/teams/EDA.png"),
+    ETAA: require("../assets/images/teams/ETAA.png"),
     CRDA: require("../assets/images/teams/CRDA.png"),
-    CFA: require("../assets/images/teams/CFA.png"),
-    Helicos: require("../assets/images/teams/Helicos.png"),
+    BFA: require("../assets/images/teams/CFA.png"),
+    MAF: require("../assets/images/teams/MAF.png"),
+    CHASSE: require("../assets/images/teams/Chasse.png"),
+    INFIRMERIE: require("../assets/images/teams/Infirmerie.png"),
+    HELICOS: require("../assets/images/teams/Helicos.png"),
     EMAA: require("../assets/images/teams/EMAA.png"),
     FUAES: require("../assets/images/teams/FUAES.png"),
-    Drones: require("../assets/images/teams/Drones.png"),
+    DRONES: require("../assets/images/teams/Drones.png"),
     OSA: require("../assets/images/teams/OSA.png"),
     MGX: require("../assets/images/teams/MGX.png"),
     EMART: require("../assets/images/teams/EMART.png"),
@@ -95,11 +99,10 @@ export default function StandingsScreen() {
       style={[
         styles.tableRow,
         index < 2 && styles.topTeam, // first two = qualified
-        index === 2 && styles.maybeQualified, // third = maybe qualified
       ]}
     >
       <View
-        style={[styles.cell, { flex: 2, flexDirection: "row", alignItems: "center" }]}
+        style={[styles.firstCell, { flex: 2, flexDirection: "row", alignItems: "center" }]}
       >
         <Image
           source={teamLogos[item.team] || teamLogos.default}
@@ -131,7 +134,7 @@ export default function StandingsScreen() {
         style={styles.logo}
       />
       <Text style={[styles.teamName, { flex: 1 }]}>{item.team}</Text>
-      <Text style={[styles.cell, { flex: 1 }]}>{item.goals} ⚽</Text>
+      <Text style={[styles.cell2, { flex: 1 }]}>{item.goals} ⚽</Text>
     </View>
   );
 
@@ -146,17 +149,17 @@ export default function StandingsScreen() {
         style={styles.logoBracket}
       />
       <Text style={[styles.teamName, { flex: 1 }]}>{item.team}</Text>
-      <Text style={[styles.cell, { flex: 1 }]}>{item.assists} 🅰️</Text>
+      <Text style={[styles.cell2, { flex: 1 }]}>{item.assists} 🅰️</Text>
     </View>
   );
 
   // dummy bracket data
   const brackets = {
     quarts: [
-      { team1: "1er Poule C", score1: 2, team2: "Meilleur 3e", score2: 1 },
-      { team1: "2e Poule A", score1: 1, team2: "1er Poule B", score2: 2 },
-      { team1: "2e Poule C", score1: 1, team2: "2e Poule B", score2: 0 },
-      { team1: "Meilleur 3e", score1: 0, team2: "1er Poule A", score2: 2 },
+      { team1: "1er Poule C", score1: 2, team2: "2e Poule B", score2: 1 },
+      { team1: "1er Poule A", score1: 1, team2: "2e Poule D", score2: 2 },
+      { team1: "1er Poule B", score1: 1, team2: "2e Poule C", score2: 0 },
+      { team1: "1er Poule D", score1: 0, team2: "2e Poule A", score2: 2 },
     ],
     demis: [
       { team1: "Vainqueur QF 1", score1: 2, team2: "Vainqueur QF 2", score2: 1 },
@@ -224,6 +227,7 @@ export default function StandingsScreen() {
             <Picker.Item label="Poule A" value="Poule A" color="#1E293B" />
             <Picker.Item label="Poule B" value="Poule B" color="#1E293B" />
             <Picker.Item label="Poule C" value="Poule C" color="#1E293B" />
+            <Picker.Item label="Poule D" value="Poule D" color="#1E293B" />
           </Picker>
 
           {renderHeader()}
@@ -243,14 +247,7 @@ export default function StandingsScreen() {
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
             <View style={[styles.colorBox, { backgroundColor: "#D1FAE5" }]} />
-            <Text style={styles.legendText}>Équipes qualifiées</Text>
-            </View>
-
-            <View style={styles.legendItem}>
-            <View style={[styles.colorBox, { backgroundColor: "#fae7d1ff" }]} />
-            <Text style={styles.legendText}>
-              Équipe potentiellement qualifiée
-            </Text>
+            <Text style={styles.legendText}>Équipes qualifiées pour la phase à Elimination Directe</Text>
             </View>
           </View>
 
@@ -281,9 +278,9 @@ export default function StandingsScreen() {
       {activeTab === "Buteurs" && (
         <>
           <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, { flex: 2 }]}>Joueur</Text>
-            <Text style={[styles.headerCell, { flex: 1 }]}>Équipe</Text>
-            <Text style={[styles.headerCell, { flex: 1 }]}>Buts</Text>
+            <Text style={[styles.headerCell2, { flex: 2 }]}>Joueur</Text>
+            <Text style={[styles.headerCell2, { flex: 1 }]}>Équipe</Text>
+            <Text style={[styles.headerCell2, { flex: 1 }]}>Buts</Text>
           </View>
           <FlatList
             data={scorers}
@@ -303,9 +300,9 @@ export default function StandingsScreen() {
       {activeTab === "Passeurs" && (
         <>
           <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, { flex: 2 }]}>Joueur</Text>
-            <Text style={[styles.headerCell, { flex: 1 }]}>Équipe</Text>
-            <Text style={[styles.headerCell, { flex: 1 }]}>Passes</Text>
+            <Text style={[styles.headerCell2, { flex: 2 }]}>Joueur</Text>
+            <Text style={[styles.headerCell2, { flex: 1 }]}>Équipe</Text>
+            <Text style={[styles.headerCell2, { flex: 1 }]}>Passes</Text>
           </View>
           <FlatList
             data={assists}
@@ -396,6 +393,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     color: "#fff",
+    marginHorizontal: -20,
+  },
+  headerCell2: {
+    flex: 1,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#fff",
   },
   tableRow: {
     flexDirection: "row",
@@ -411,7 +415,9 @@ const styles = StyleSheet.create({
   topTeam: { backgroundColor: "#D1FAE5" },
   maybeQualified: { backgroundColor: "#fae7d1ff" },
   topHighlight: { backgroundColor: "#D1FAE5" },
-  cell: { flex: 1, textAlign: "center", color: "#1E293B" },
+  cell: { flex: 1, textAlign: "center", color: "#1E293B", marginHorizontal: -9 },
+  cell2: { flex: 1, textAlign: "center", color: "#1E293B" },
+  firstCell: { flex: 1, textAlign: "center", color: "#1E293B", marginLeft: 3 },
   rank: {
     width: 20,
     textAlign: "center",
@@ -450,6 +456,7 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     borderRadius: 10,
     paddingHorizontal: 15,
+    paddingVertical: 5,
     marginVertical: 5,
     alignItems: "center",
   },
