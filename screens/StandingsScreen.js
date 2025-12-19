@@ -40,6 +40,15 @@ export default function StandingsScreen() {
     default: require("../assets/images/teams/TeamLogo.png"),
   };
 
+  const sortTeams = (teams = []) =>
+    [...teams].sort((a, b) => {
+      if ((b.pts || 0) !== (a.pts || 0)) {
+        return (b.pts || 0) - (a.pts || 0);
+      }
+      return (b.gd || 0) - (a.gd || 0);
+    });
+
+
   useEffect(() => {
     setLoading(true);
 
@@ -47,7 +56,7 @@ export default function StandingsScreen() {
       const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       // sort each poule’s teams by points
       data.forEach((p) => {
-        p.teams = p.teams?.sort((a, b) => (b.pts || 0) - (a.pts || 0)) || [];
+        p.teams = sortTeams(p.teams);
       });
       setPoules(data);
     });

@@ -115,6 +115,7 @@ export default function EventsTab({ match }) {
 const styles = StyleSheet.create({
   scrollContainer: {
     padding: 14,
+    paddingBottom: 40,
     backgroundColor: "#fff",
   },
   center: {

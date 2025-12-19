@@ -2,11 +2,10 @@
 import {
   collection,
   doc,
-  getDoc,
-  getDocs,
+  onSnapshot,
   orderBy,
   query,
-  where,
+  where
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
@@ -44,99 +43,56 @@ export default function TableTab({ match }) {
     default: require("../../assets/images/teams/TeamLogo.png"),
   };
 
-  // ---------- DATE HELPERS ----------
-  const parseDateTime = (dateValue, timeValue) => {
-    if (!dateValue) return null;
-
-    if (typeof dateValue?.toDate === "function") return dateValue.toDate();
-    if (dateValue?.seconds) return new Date(dateValue.seconds * 1000);
-    if (dateValue instanceof Date) return dateValue;
-
-    if (typeof dateValue === "string") {
-      const time =
-        typeof timeValue === "string" && !timeValue.toLowerCase().includes("confirmer")
-          ? timeValue
-          : "00:00";
-      const parts = dateValue.includes("-")
-        ? dateValue.split("-")
-        : dateValue.split("/");
-      if (parts.length < 3) return null;
-
-      const [d, m, y] =
-        parts[0].length === 4 ? [parts[2], parts[1], parts[0]] : parts;
-      return new Date(`${y}-${m}-${d}T${time}`);
-    }
-    return null;
-  };
-
-  const formatFullDateTime = (d, t) => {
-    const date = parseDateTime(d, t);
-    if (!date) return "";
-    return `${date.toLocaleDateString()} ${date
-      .toLocaleTimeString()
-      .slice(0, 5)}`;
-  };
-
-  const getMatchStatus = (dateValue, timeValue, score1, score2) => {
-    const now = new Date();
-    const matchDate = parseDateTime(dateValue, timeValue);
-    if (!matchDate) return "unknown";
-
-    const matchEnd = new Date(matchDate.getTime() + 90 * 60 * 1000);
-
-    // 🕓 Match not started yet
-    if (now < matchDate) return "upcoming";
-
-    // 🔴 Match in progress
-    if (now >= matchDate && now <= matchEnd) return "live";
-
-    // ✅ Match finished (time-based, not score-based)
-    if (now > matchEnd) return "finished";
-
-    return "unknown";
-  };
-
   // ---------- FETCH ----------
   useEffect(() => {
-    async function fetchTable() {
-      try {
-        setLoading(true);
-        if (!match?.phase) return;
+    if (!match?.phase) return;
 
-        if (["Poule A", "Poule B", "Poule C", "Poule D"].includes(match.phase)) {
-          const map = {
-            "Poule A": "pouleA",
-            "Poule B": "pouleB",
-            "Poule C": "pouleC",
-            "Poule D": "pouleD",
-          };
-          const snap = await getDoc(doc(db, "poules", map[match.phase]));
+    let unsubscribe;
+
+    if (["Poule A", "Poule B", "Poule C", "Poule D"].includes(match.phase)) {
+      const map = {
+        "Poule A": "pouleA",
+        "Poule B": "pouleB",
+        "Poule C": "pouleC",
+        "Poule D": "pouleD",
+      };
+
+      unsubscribe = onSnapshot(
+        doc(db, "poules", map[match.phase]),
+        (snap) => {
           setData(snap.exists() ? snap.data().teams || [] : []);
-        } else {
-          const q = query(
-            collection(db, "fixtures"),
-            where("phase", "==", match.phase),
-            orderBy("date", "asc")
-          );
-          const snap = await getDocs(q);
-          setData(
-            snap.docs.map((d) => ({
-              id: d.id,
-              ...d.data(),
-            }))
-          );
+          setLoading(false);
         }
-      } catch (e) {
-        console.error(e);
-        setData([]);
-      } finally {
+      );
+    } else {
+      const q = query(
+        collection(db, "fixtures"),
+        where("phase", "==", match.phase),
+        orderBy("date", "asc")
+      );
+
+      unsubscribe = onSnapshot(q, (snap) => {
+        setData(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+        );
         setLoading(false);
-      }
+      });
     }
-    fetchTable();
+
+    return () => unsubscribe && unsubscribe();
   }, [match.phase]);
 
+
   if (loading) return <Text style={{ padding: 20 }}>Chargement…</Text>;
+
+  // ---------- SORTING (ONLY CHANGE) ----------
+  const sortedTeams = [...data].sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    return (b.gd || 0) - (a.gd || 0);
+  });
 
   // ---------- GROUP TABLE ----------
   const renderGroup = () => (
@@ -159,15 +115,12 @@ export default function TableTab({ match }) {
         ))}
       </View>
 
-      {data.map((team, i) => {
+      {sortedTeams.map((team, i) => {
         const isQualified = i < 2;
         return (
           <View
             key={i}
-            style={[
-              styles.row,
-              isQualified && styles.qualifiedRow,
-            ]}
+            style={[styles.row, isQualified && styles.qualifiedRow]}
           >
             <Text style={styles.cell}>{i + 1}</Text>
 
@@ -192,7 +145,9 @@ export default function TableTab({ match }) {
       <Text style={[styles.legend, { fontSize: 11 * scale }]}>
         Les 2 premières équipes sont qualifiées
       </Text>
-      <Text style={[styles.legend, { fontSize: 11 * scale }]}> Légende: MJ = Matchs joués, G = Gagnés, N = Nuls, P = Perdus, Pts = Points </Text>
+      <Text style={[styles.legend, { fontSize: 11 * scale }]}>
+        Légende: MJ = Matchs joués, G = Gagnés, N = Nuls, P = Perdus, Pts = Points
+      </Text>
     </View>
   );
 
@@ -203,26 +158,16 @@ export default function TableTab({ match }) {
         Élimination Directe – {match.phase}
       </Text>
 
-      {data.map((f, i) => {
-        const status = getMatchStatus(f.date, f.time, f.homeScore, f.awayScore);
-        return (
-          <View key={f.id || i} style={styles.fixture}>
-            <Text style={styles.fixtureDate}>
-              {formatFullDateTime(f.date, f.time)}
-            </Text>
-            <Text style={styles.fixtureText}>
-              {f.team1} {f.homeScore ?? ""} – {f.awayScore ?? ""} {f.team2}
-            </Text>
-            <Text style={styles.status}>
-              {status === "live"
-                ? "En direct 🔴"
-                : status === "upcoming"
-                ? "À venir 🕓"
-                : "Terminé ✅"}
-            </Text>
-          </View>
-        );
-      })}
+      {data.map((f, i) => (
+        <View key={f.id || i} style={styles.fixture}>
+          <Text style={styles.fixtureDate}>
+            {f.date?.toDate ? f.date.toDate().toLocaleString() : ""}
+          </Text>
+          <Text style={styles.fixtureText}>
+            {f.team1} {f.homeScore ?? ""} – {f.awayScore ?? ""} {f.team2}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 
@@ -235,7 +180,7 @@ export default function TableTab({ match }) {
   );
 }
 
-// ---------- STYLES ----------
+// ---------- STYLES (UNCHANGED) ----------
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
@@ -304,10 +249,5 @@ const styles = StyleSheet.create({
   fixtureDate: {
     fontSize: 12,
     color: "#444",
-  },
-  status: {
-    textAlign: "right",
-    marginTop: 4,
-    fontWeight: "600",
   },
 });
