@@ -81,15 +81,15 @@ export default function LineupsTab(props) {
 
   /* ---------- 9-player layout ---------- */
   const layoutPositions = [
-    { x: 0.46, y: 0.08 },
-    { x: 0.18, y: 0.16 },
-    { x: 0.46, y: 0.20 },
-    { x: 0.74, y: 0.16 },
-    { x: 0.12, y: 0.30 },
-    { x: 0.46, y: 0.32 },
-    { x: 0.80, y: 0.30 },
-    { x: 0.30, y: 0.42 },
-    { x: 0.62, y: 0.42 },
+    { x: 0.41, y: 0.08 },
+    { x: 0.13, y: 0.16 },
+    { x: 0.41, y: 0.20 },
+    { x: 0.69, y: 0.16 },
+    { x: 0.07, y: 0.30 },
+    { x: 0.41, y: 0.32 },
+    { x: 0.75, y: 0.30 },
+    { x: 0.25, y: 0.42 },
+    { x: 0.57, y: 0.42 },
   ];
 
   /* ---------- Helpers ---------- */
@@ -137,7 +137,7 @@ export default function LineupsTab(props) {
           {
             left: x - 22 * scale,
             top: y - 22 * scale,
-            width: 75 * scale,
+            width: 110 * scale,
           },
         ]}
       >

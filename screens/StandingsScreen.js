@@ -180,7 +180,6 @@ export default function StandingsScreen() {
           <Text style={styles.matchText}>
             {m.team1} 
           </Text>
-          <View style={styles.connectorLine} />
           <Text style={styles.matchText}>
             {m.team2} 
           </Text>
