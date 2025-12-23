@@ -1,19 +1,31 @@
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
 import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   useWindowDimensions,
-  View
+  View,
 } from "react-native";
 import { db } from "../firebaseConfig";
 
 export default function HomeScreen({ navigation }) {
   const [nextMatch, setNextMatch] = useState(null);
+  const [liveMatch, setLiveMatch] = useState(null);
   const [countdown, setCountdown] = useState("");
+  const [articles, setArticles] = useState([]);
+  const [loadingArticles, setLoadingArticles] = useState(true);
+  const [search, setSearch] = useState("");
+
   const { width, height } = useWindowDimensions();
 
   const teamLogos = {
@@ -35,34 +47,41 @@ export default function HomeScreen({ navigation }) {
     default: require("../assets/images/teams/TeamLogo.png"),
   };
 
-  // 📏 Responsive scaling based on screen width
-  const scale = width / 375; // 375 = iPhone X baseline
-  const fontScale = Math.min(scale * 1.1, 1.3);
-
+  /* ======================
+     📅 MATCHS
+  ======================= */
   useEffect(() => {
     const q = query(collection(db, "fixtures"), orderBy("date", "asc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const now = new Date();
+
       const matches = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      const now = new Date();
-      const upcomingMatches = matches.filter((m) => {
-        const matchDate = m.date?.toDate ? m.date.toDate() : new Date(m.date);
-        return matchDate > now;
+      const ongoing = matches.find((m) => {
+        const kickoff = m.date?.toDate ? m.date.toDate() : new Date(m.date);
+        const end = new Date(kickoff.getTime() + 90 * 60000);
+        return now >= kickoff && now <= end;
       });
 
-      if (upcomingMatches.length > 0) {
-        setNextMatch(upcomingMatches[0]);
-      } else {
-        setNextMatch(null);
-      }
+      const upcoming = matches.find((m) => {
+        const d = m.date?.toDate ? m.date.toDate() : new Date(m.date);
+        return d > now;
+      });
+
+      setLiveMatch(ongoing || null);
+      setNextMatch(upcoming || null);
     });
 
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
+  /* ======================
+     ⏱️ COUNTDOWN
+  ======================= */
   useEffect(() => {
     if (!nextMatch) return;
 
@@ -78,266 +97,292 @@ export default function HomeScreen({ navigation }) {
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / (1000 * 60)) % 60);
+      const s = Math.floor((diff / 1000) % 60);
 
-      setCountdown(`${days}j ${hours}h ${minutes}m ${seconds}s`);
+      setCountdown(`${d}j ${h}h ${m}m ${s}s`);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [nextMatch]);
 
+  /* ======================
+     📰 ARTICLES
+  ======================= */
+  useEffect(() => {
+    const q = query(
+      collection(db, "articles"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setArticles(list);
+      setLoadingArticles(false);
+    });
+
+    return () => unsub();
+  }, []);
+
+  /* ======================
+     🔍 FILTRAGE
+  ======================= */
+  const filteredArticles = useMemo(() => {
+    const term = search.toLowerCase();
+    return articles.filter(
+      (a) =>
+        a.title?.toLowerCase().includes(term) ||
+        a.content?.toLowerCase().includes(term)
+    );
+  }, [search, articles]);
+
+  /* ======================
+     🕒 FORMAT DATE
+  ======================= */
+  const formatDate = (createdAt) => {
+    if (!createdAt?.toDate) return "";
+
+    const date = createdAt.toDate();
+    const diff = Date.now() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+
+    if (hours < 24) {
+      if (hours < 1) {
+        const minutes = Math.floor(diff / (1000 * 60));
+        return `Publié il y'a ${minutes} min`;
+      }
+      return `Publié il y'a ${hours} h`;
+    }
+
+    return `Posté le ${date.toLocaleDateString("fr-FR")} à ${date.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  };
+
   return (
     <ScrollView
-      style={[
-        styles.container,
-        { paddingHorizontal: width * 0.01, marginBottom: height * 0.12, marginHorizontal: width * 0.02 },
-      ]}
-      contentContainerStyle={{ paddingBottom: height * 0.1 }}
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: height * 0.12 }}
     >
-      <Text
-        style={[
-          styles.header,
-          { fontSize: 16 * fontScale, marginTop: height * 0.02 },
-        ]}
-      >
-        Tournoi de Football des Escadrons et Services
-      </Text>
-
-      <Text style={[styles.title, { fontSize: 12 * fontScale }]}>
-        4ème Édition - Décembre 2025
-      </Text>
-
-      <View
-        style={[
-          styles.midImage,
-          {
-            marginTop: -height * 0.02,
-            marginBottom: -height * 0.02,
-          },
-        ]}
-      >
-        <Image
-          source={require("../assets/images/Tournoi.png")}
-          style={{
-            width: width * 0.75,
-            height: width * 0.75,
-          }}
-          resizeMode="contain"
-        />
-      </View>
-
-      <View
-        style={[
-          styles.paragraph,
-          { paddingHorizontal: width * 0.02, paddingBottom: height * 0.005 },
-        ]}
-      >
-        <Text style={[styles.text, { fontSize: 13 * fontScale }]}>
-          Le sport constitue un élément important de la vie quotidienne des
-          militaires. Les activités sportives, en particulier celles qui se font
-          en équipe, permettent de développer, renforcer et maintenir un esprit
-          de cohésion et de compétitivité saine au sein de nos Forces Armées.
-        </Text>
-
-        <Text style={[styles.text, { fontSize: 13 * fontScale }]}>
-          C’est dans cette optique qu’une compétition de football a été initiée
-          au sein de la Base Aérienne 101. Elle oppose les différents Escadrons
-          et Services dans un tournoi en poules suivi d’une phase à élimination
-          directe.
-        </Text>
-      </View>
-
+      {/* ======================
+         🎯 MATCHS
+      ======================= */}
       <View
         style={[
           styles.buttonsContainer,
           {
             flexDirection: width < 400 ? "column" : "row",
-            alignItems: "center",
-            justifyContent:
-              width < 400 ? "center" : "space-evenly",
+            justifyContent: "space-evenly",
           },
         ]}
       >
-        {/* Palmarès Card */}
         <TouchableOpacity
-          style={[
-            styles.card,
-            styles.trophiesCard,
-            {
-              width: width < 400 ? "80%" : "45%",
-              padding: width * 0.02,
-            },
-          ]}
-          onPress={() => navigation.navigate("Palmarès 🏆")}
+          style={[styles.card, styles.liveMatchCard]}
+          onPress={() => navigation.navigate("Matchs")}
         >
-          <Text style={[styles.cardEmoji, { fontSize: 15 * fontScale }]}>🏆</Text>
-          <Text style={[styles.cardTitle, { fontSize: 13 * fontScale }]}>
-            Palmarès
-          </Text>
-          <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
-            Vainqueurs et Distinctions
-          </Text>
-          <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
-                
+          <Text style={styles.cardEmoji}>🔴</Text>
+          <Text style={styles.cardTitle}>Match en cours</Text>
+          <Text style={styles.cardSubtitle}>
+            {liveMatch ? `${liveMatch.team1} vs ${liveMatch.team2}` : "Aucun match"}
           </Text>
         </TouchableOpacity>
 
-        {/* Next Match Card */}
         <TouchableOpacity
-          style={[
-            styles.card,
-            styles.nextMatchCard,
-            {
-              width: width < 400 ? "80%" : "45%",
-              padding: width * 0.02,
-            },
-          ]}
+          style={[styles.card, styles.nextMatchCard]}
           onPress={() => navigation.navigate("Matchs")}
         >
-          <Text style={[styles.cardEmoji, { fontSize: 15 * fontScale }]}>⚽</Text>
-          <Text style={[styles.cardTitle, { fontSize: 13 * fontScale }]}>
-            Prochain Match
-          </Text>
+          <Text style={styles.cardEmoji}>⚽</Text>
+          <Text style={styles.cardTitle}>Prochain Match</Text>
 
           {nextMatch ? (
             <>
-              <Text
-                style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}
-              >
-                Début :{" "}
-                <Text style={[styles.countdown, { fontSize: 11 * fontScale }]}>
-                  {countdown}
-                </Text>
+              <Text style={styles.cardSubtitle}>
+                Début : <Text style={styles.countdown}>{countdown}</Text>
               </Text>
 
-              {/* ✅ TEAM LOGOS + NAMES */}
               <View style={styles.matchRow}>
-                <View style={styles.teamRow}>
-                  <Image
-                    source={teamLogos[nextMatch.team1] || teamLogos.default}
-                    style={[styles.teamLogo, { width: 18 * scale, height: 18 * scale }]}
-                  />
-                  <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
-                    {nextMatch.team1}
-                  </Text>
-                </View>
-
-                <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale, marginHorizontal: 6 }]}>
-                  vs
+                <Image
+                  source={teamLogos[nextMatch.team1] || teamLogos.default}
+                  style={styles.teamLogo}
+                />
+                <Text style={styles.cardSubtitle}>
+                  {nextMatch.team1} vs {nextMatch.team2}
                 </Text>
-
-                <View style={styles.teamRow}>
-                  <Text style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}>
-                    {nextMatch.team2}
-                  </Text>
-                  <Image
-                    source={teamLogos[nextMatch.team2] || teamLogos.default}
-                    style={[styles.teamLogo, { width: 18 * scale, height: 18 * scale }]}
-                  />
-                </View>
+                <Image
+                  source={teamLogos[nextMatch.team2] || teamLogos.default}
+                  style={styles.teamLogo}
+                />
               </View>
-
             </>
           ) : (
-            <Text
-              style={[styles.cardSubtitle, { fontSize: 11 * fontScale }]}
-            >
-              Aucun match à venir
-            </Text>
+            <Text style={styles.cardSubtitle}>Aucun match à venir</Text>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* ======================
+         📰 ARTICLES
+      ======================= */}
+      <Text style={styles.sectionTitle}>Actualités du Tournoi</Text>
+
+      <TextInput
+        placeholder="Rechercher un article..."
+        value={search}
+        onChangeText={setSearch}
+        style={styles.searchInput}
+      />
+
+      {loadingArticles ? (
+        <ActivityIndicator size="large" color="#1077a7" style={{ marginTop: 20 }} />
+      ) : (
+        filteredArticles.map((article) => (
+          <TouchableOpacity
+            key={article.id}
+            style={styles.articleCard}
+            onPress={() =>
+              navigation.navigate("Détails de l’Article", {
+                articleId: article.id,
+              })
+            }
+          >
+            {article.imageUrl && (
+              <Image source={{ uri: article.imageUrl }} style={styles.articleImage} />
+            )}
+
+            <View style={styles.articleContent}>
+              <Text style={styles.articleTitle}>{article.title}</Text>
+
+              <Text numberOfLines={2} style={styles.articleText}>
+                {article.content}
+              </Text>
+
+              <View style={styles.articleFooter}>
+                <Text style={styles.articleDate}>
+                  {formatDate(article.createdAt)}
+                </Text>
+
+                <Text style={styles.views}>👁️ {article.views || 0}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))
+      )}
     </ScrollView>
   );
 }
 
+/* ======================
+   🎨 STYLES
+====================== */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 20,
-    marginVertical: 10,
-  },
-  text: {
-    color: "#333",
-    marginBottom: 10,
-    lineHeight: 22,
-  },
-  title: {
-    fontWeight: "bold",
-    color: "#1077a7ff",
-    textAlign: "center",
-  },
-  header: {
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#1077a7ff",
-    textAlign: "center",
-  },
-  paragraph: {
-    backgroundColor: "#f9fafb",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  midImage: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#f4f6f8",
+    paddingHorizontal: 12,
   },
   buttonsContainer: {
     marginTop: 10,
   },
   card: {
-    backgroundColor: "#f8fcffff",
+    backgroundColor: "#fff",
     borderRadius: 18,
+    padding: 10,
     alignItems: "center",
-    marginVertical: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 4,
+    marginVertical: 8,
+    width: "45%",
     elevation: 4,
   },
+  liveMatchCard: {
+    borderLeftWidth: 6,
+    borderLeftColor: "#d32f2f",
+  },
+  nextMatchCard: {
+    borderLeftWidth: 6,
+    borderLeftColor: "#1077a7",
+  },
   cardEmoji: {
-    marginBottom: 1,
+    fontSize: 18,
   },
   cardTitle: {
     fontWeight: "700",
-    color: "#333",
+    marginTop: 4,
   },
   cardSubtitle: {
     color: "#666",
     marginTop: 4,
-    textAlign: "center",
-  },
-  trophiesCard: {
-    borderLeftWidth: 6,
-    borderLeftColor: "#fbc02d",
-  },
-  nextMatchCard: {
-    borderLeftWidth: 6,
-    borderLeftColor: "#1077a7ff",
   },
   countdown: {
     fontWeight: "bold",
-    color: "#1077a7ff",
+    color: "#1077a7",
   },
   matchRow: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 6,
   },
-  teamRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   teamLogo: {
-    marginRight: 6,
+    width: 18,
+    height: 18,
+    marginHorizontal: 4,
     resizeMode: "contain",
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginVertical: 12,
+    color: "#1077a7",
+    textAlign: "center",
+  },
+
+  searchInput: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 12,
+    elevation: 2,
+  },
+
+  articleCard: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    marginBottom: 14,
+    overflow: "hidden",
+    elevation: 4,
+  },
+  articleImage: {
+    width: "100%",
+    height: 100, // 👈 image réduite
+  },
+  articleContent: {
+    padding: 12,
+  },
+  articleTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  articleText: {
+    color: "#555",
+    marginTop: 4,
+  },
+  articleFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  articleDate: {
+    fontSize: 11,
+    color: "#888",
+  },
+  views: {
+    fontSize: 11,
+    color: "#555",
   },
 });

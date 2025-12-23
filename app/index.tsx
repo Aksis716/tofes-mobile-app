@@ -25,6 +25,7 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import { auth, db } from "../firebaseConfig";
 
 // Screens
+import ArticleDetailsScreen from '../screens/ArticleDetailsScreen';
 import AuthScreen from '../screens/AuthScreen';
 import FixturesScreen from '../screens/FixturesScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -40,6 +41,7 @@ import TeamsScreen from '../screens/TeamsScreen';
 import WinnersScreen from '../screens/WinnersScreen';
 
 // Admin Screens
+import AdminArticlesScreen from '../screens/AdminArticlesScreen';
 import AdminCommentsScreen from '../screens/AdminCommentsScreen';
 import AdminDevicesScreen from '../screens/AdminDevicesScreen';
 import AdminFixturesScreen from '../screens/AdminFixturesScreen';
@@ -458,6 +460,16 @@ const TopRightIcons = ({ navigation }: any) => (
         }}
       />
       <Drawer.Screen
+        name="Détails de l’Article"
+        component={ArticleDetailsScreen}
+        options={{
+          title: "Détails de l’Article",
+          headerStyle: { backgroundColor: "#1077a7" },
+          headerTintColor: "#fff",
+          drawerItemStyle: { height: 0 },
+        }}
+      />
+      <Drawer.Screen
         name="Notifications"
         component={NotificationScreen}
         options={{
@@ -501,6 +513,18 @@ const TopRightIcons = ({ navigation }: any) => (
       {/* ⚙️ Admin access (admin + creator only) */}
       {(userRole === "admin" || userRole === "creator") && (
         <>
+          <Drawer.Screen
+            name="Admin Articles"
+            component={AdminArticlesScreen}
+            options={{
+              title: "Admin Articles",
+              headerStyle: { backgroundColor: "#1077a7" },
+              headerTintColor: "#fff",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="text-sharp" size={size} color={color} />
+              ),
+            }}
+          />
           <Drawer.Screen
             name="Admin Teams"
             component={AdminTeamsScreen}
