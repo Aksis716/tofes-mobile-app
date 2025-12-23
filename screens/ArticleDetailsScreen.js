@@ -1,17 +1,17 @@
 import {
-    doc,
-    increment,
-    onSnapshot,
-    updateDoc,
+  doc,
+  increment,
+  onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { db } from "../firebaseConfig";
 
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#111827",
+    color: "#1077a7",
   },
 
   date: {

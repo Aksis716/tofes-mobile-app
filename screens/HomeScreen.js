@@ -85,9 +85,7 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     if (!nextMatch) return;
 
-    const matchDate = nextMatch.date?.toDate
-      ? nextMatch.date.toDate()
-      : new Date(nextMatch.date);
+    const matchDate = nextMatch.date.toDate();
 
     const interval = setInterval(() => {
       const diff = matchDate - new Date();
@@ -112,17 +110,10 @@ export default function HomeScreen({ navigation }) {
      📰 ARTICLES
   ======================= */
   useEffect(() => {
-    const q = query(
-      collection(db, "articles"),
-      orderBy("createdAt", "desc")
-    );
+    const q = query(collection(db, "articles"), orderBy("createdAt", "desc"));
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setArticles(list);
+      setArticles(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
       setLoadingArticles(false);
     });
 
@@ -146,18 +137,11 @@ export default function HomeScreen({ navigation }) {
   ======================= */
   const formatDate = (createdAt) => {
     if (!createdAt?.toDate) return "";
-
     const date = createdAt.toDate();
-    const diff = Date.now() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const diffH = (Date.now() - date.getTime()) / 36e5;
 
-    if (hours < 24) {
-      if (hours < 1) {
-        const minutes = Math.floor(diff / (1000 * 60));
-        return `Publié il y'a ${minutes} min`;
-      }
-      return `Publié il y'a ${hours} h`;
-    }
+    if (diffH < 1) return `Publié il y a ${Math.floor(diffH * 60)} min`;
+    if (diffH < 24) return `Publié il y a ${Math.floor(diffH)} h`;
 
     return `Posté le ${date.toLocaleDateString("fr-FR")} à ${date.toLocaleTimeString("fr-FR", {
       hour: "2-digit",
@@ -165,70 +149,68 @@ export default function HomeScreen({ navigation }) {
     })}`;
   };
 
+  const isNewArticle = (createdAt) =>
+    createdAt?.toDate &&
+    Date.now() - createdAt.toDate().getTime() < 24 * 60 * 60 * 1000;
+
+  /* ======================
+     🎨 UI
+  ======================= */
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: height * 0.12 }}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: height * 0.12 }}>
+      
       {/* ======================
          🎯 MATCHS
       ======================= */}
-      <View
-        style={[
-          styles.buttonsContainer,
-          {
-            flexDirection: width < 400 ? "column" : "row",
-            justifyContent: "space-evenly",
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={[styles.card, styles.liveMatchCard]}
-          onPress={() => navigation.navigate("Matchs")}
-        >
-          <Text style={styles.cardEmoji}>🔴</Text>
-          <Text style={styles.cardTitle}>Match en cours</Text>
-          <Text style={styles.cardSubtitle}>
-            {liveMatch ? `${liveMatch.team1} vs ${liveMatch.team2}` : "Aucun match"}
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.matchContainer}>
+        {liveMatch && (
+          <TouchableOpacity style={[styles.card, styles.liveMatchCard, styles.half]} onPress={() => navigation.navigate("Matchs")}>
+            <Text style={styles.cardTitle}>Match en cours</Text>
+            <View style={styles.matchRow}>
+              <Image source={teamLogos[liveMatch.team1] || teamLogos.default} style={styles.teamLogo} />
+              <Text style={styles.cardSubtitle}>{liveMatch.team1}</Text>
+              <Text style={styles.cardSubtitle}> vs </Text>
+              <Text style={styles.cardSubtitle}>{liveMatch.team2}</Text>
+              <Image source={teamLogos[liveMatch.team2] || teamLogos.default} style={styles.teamLogo} />
+            </View>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
-          style={[styles.card, styles.nextMatchCard]}
+          style={[
+            styles.card,
+            styles.nextMatchCard,
+            liveMatch ? styles.half : styles.full,
+          ]}
           onPress={() => navigation.navigate("Matchs")}
         >
-          <Text style={styles.cardEmoji}>⚽</Text>
           <Text style={styles.cardTitle}>Prochain Match</Text>
 
-          {nextMatch ? (
-            <>
-              <Text style={styles.cardSubtitle}>
-                Début : <Text style={styles.countdown}>{countdown}</Text>
-              </Text>
-
-              <View style={styles.matchRow}>
-                <Image
-                  source={teamLogos[nextMatch.team1] || teamLogos.default}
-                  style={styles.teamLogo}
-                />
-                <Text style={styles.cardSubtitle}>
-                  {nextMatch.team1} vs {nextMatch.team2}
-                </Text>
-                <Image
-                  source={teamLogos[nextMatch.team2] || teamLogos.default}
-                  style={styles.teamLogo}
-                />
+          {nextMatch && (
+            liveMatch ? (
+              <>
+                <Text style={styles.countdown}>{countdown}</Text>
+                <View style={styles.matchRow}>
+                  <Image source={teamLogos[nextMatch.team1] || teamLogos.default} style={styles.teamLogo} />
+                  <Text style={styles.cardSubtitle}>{nextMatch.team1} vs {nextMatch.team2}</Text>
+                  <Image source={teamLogos[nextMatch.team2] || teamLogos.default} style={styles.teamLogo} />
+                </View>
+              </>
+            ) : (
+              <View style={styles.fullMatchRow}>
+                <Image source={teamLogos[nextMatch.team1] || teamLogos.default} style={styles.bigLogo} />
+                <View>
+                  <Text style={styles.countdown}>{countdown}</Text>
+                  <Text style={styles.cardSubtitle}>{nextMatch.team1} vs {nextMatch.team2}</Text>
+                </View>
+                <Image source={teamLogos[nextMatch.team2] || teamLogos.default} style={styles.bigLogo} />
               </View>
-            </>
-          ) : (
-            <Text style={styles.cardSubtitle}>Aucun match à venir</Text>
+            )
           )}
         </TouchableOpacity>
       </View>
 
-      {/* ======================
-         📰 ARTICLES
-      ======================= */}
+      {/* ARTICLES */}
       <Text style={styles.sectionTitle}>Actualités du Tournoi</Text>
 
       <TextInput
@@ -239,34 +221,30 @@ export default function HomeScreen({ navigation }) {
       />
 
       {loadingArticles ? (
-        <ActivityIndicator size="large" color="#1077a7" style={{ marginTop: 20 }} />
+        <ActivityIndicator size="large" color="#1077a7" />
       ) : (
         filteredArticles.map((article) => (
           <TouchableOpacity
             key={article.id}
             style={styles.articleCard}
-            onPress={() =>
-              navigation.navigate("Détails de l’Article", {
-                articleId: article.id,
-              })
-            }
+            onPress={() => navigation.navigate("Détails de l’Article", { articleId: article.id })}
           >
-            {article.imageUrl && (
-              <Image source={{ uri: article.imageUrl }} style={styles.articleImage} />
-            )}
+            {article.imageUrl && <Image source={{ uri: article.imageUrl }} style={styles.articleImage} />}
+
+            {isNewArticle(article.createdAt) && (
+                  <View style={styles.badge}><Text style={styles.badgeText}>Nouveau</Text></View>
+                )}
 
             <View style={styles.articleContent}>
-              <Text style={styles.articleTitle}>{article.title}</Text>
+              <View style={styles.articleHeader}>
+                <Text style={styles.articleTitle}>{article.title}</Text>
+                
+              </View>
 
-              <Text numberOfLines={2} style={styles.articleText}>
-                {article.content}
-              </Text>
+              <Text numberOfLines={2} style={styles.articleText}>{article.content}</Text>
 
               <View style={styles.articleFooter}>
-                <Text style={styles.articleDate}>
-                  {formatDate(article.createdAt)}
-                </Text>
-
+                <Text style={styles.articleDate}>{formatDate(article.createdAt)}</Text>
                 <Text style={styles.views}>👁️ {article.views || 0}</Text>
               </View>
             </View>
@@ -281,73 +259,59 @@ export default function HomeScreen({ navigation }) {
    🎨 STYLES
 ====================== */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f4f6f8",
-    paddingHorizontal: 12,
-  },
-  buttonsContainer: {
-    marginTop: 10,
-  },
+  container: { flex: 1, backgroundColor: "#f4f6f8", paddingHorizontal: 12 },
+  matchContainer: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 18,
-    padding: 10,
-    alignItems: "center",
-    marginVertical: 8,
-    width: "45%",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     elevation: 4,
   },
-  liveMatchCard: {
-    borderLeftWidth: 6,
-    borderLeftColor: "#d32f2f",
-  },
-  nextMatchCard: {
-    borderLeftWidth: 6,
-    borderLeftColor: "#1077a7",
-  },
-  cardEmoji: {
-    fontSize: 18,
-  },
-  cardTitle: {
-    fontWeight: "700",
-    marginTop: 4,
-  },
-  cardSubtitle: {
-    color: "#666",
-    marginTop: 4,
-  },
-  countdown: {
-    fontWeight: "bold",
-    color: "#1077a7",
-  },
+  half: { width: "48%" },
+  full: { width: "100%" },
+
+  cardTitle: { fontWeight: "700", textAlign: "center", color: "#12465fff" },
+  cardSubtitle: { color: "#555", marginTop: 4 },
+
   matchRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
+    justifyContent: "center",
   },
-  teamLogo: {
-    width: 18,
-    height: 18,
-    marginHorizontal: 4,
-    resizeMode: "contain",
+  fullMatchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  teamLogo: { width: 18, height: 18, marginHorizontal: 4 },
+  bigLogo: { width: 60, height: 60 },
+
+  countdown: { fontWeight: "bold", color: "#1077a7", textAlign: "center" },
+
+  liveMatchCard: {
+    borderLeftWidth: 6,
+    borderLeftColor: "#fb2d2dff",
+  },
+  nextMatchCard: {
+    borderLeftWidth: 6,
+    borderLeftColor: "#1077a7ff",
   },
 
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
+    textAlign: "center",
     marginVertical: 12,
     color: "#1077a7",
-    textAlign: "center",
   },
-
   searchInput: {
     backgroundColor: "#fff",
     borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    padding: 10,
     marginBottom: 12,
-    elevation: 2,
+    elevation: 4,
   },
 
   articleCard: {
@@ -357,32 +321,33 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     elevation: 4,
   },
-  articleImage: {
-    width: "100%",
-    height: 100, // 👈 image réduite
+  articleImage: { width: "100%", height: 110 },
+  articleContent: { padding: 12 },
+
+  articleHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  articleContent: {
-    padding: 12,
+  articleTitle: { fontSize: 15, fontWeight: "700", color: "#1077a7" },
+
+  badge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "#d32f2f",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  articleTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  articleText: {
-    color: "#555",
-    marginTop: 4,
-  },
+  badgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+
+  articleText: { marginTop: 4, color: "#555" },
   articleFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 8,
   },
-  articleDate: {
-    fontSize: 11,
-    color: "#888",
-  },
-  views: {
-    fontSize: 11,
-    color: "#555",
-  },
+  articleDate: { fontSize: 11, color: "#888" },
+  views: { fontSize: 11, color: "#555" },
 });
