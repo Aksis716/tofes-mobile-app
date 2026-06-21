@@ -1,51 +1,56 @@
-# Welcome to your Expo app 👋
+# TOFES
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**TOFES** is a mobile companion for football tournaments. It gives supporters a single place to follow fixtures, live match information, standings, teams, news, and tournament highlights—while giving organisers the tools to keep every detail current.
 
-## Get started
+Built as a production-minded Expo/React Native project, it demonstrates a full mobile product flow: authentication, live content, media, push notifications, and role-based administration.
 
-1. Install dependencies
+## What it does
 
-   ```bash
-   npm install
-   ```
+- Browse tournament news, teams, fixtures, programme, standings, and past editions.
+- Open a match centre with scores, events, lineups, tables, media, and fan commentary.
+- Create an account and manage a profile.
+- Receive push notifications for tournament updates.
+- Give administrators dedicated interfaces to manage articles, teams, matches, standings, comments, notifications, users, and platform statistics.
 
-2. Start the app
+## Built with
 
-   ```bash
-   npx expo start
-   ```
+- **Expo** and **React Native** for Android, iOS, and web
+- **Expo Router** and React Navigation for app navigation
+- **Firebase** for authentication and cloud data
+- Expo Notifications, Image Picker, and device APIs
+- React Native Paper, Moti, Lucide, and SVG/chart components for the interface
 
-In the output, you'll find options to open the app in a
+## Run locally
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Prerequisites
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Node.js 18 or later
+- npm
+- Expo Go or an Android/iOS simulator for mobile testing
 
-## Get a fresh project
-
-When you're ready, run:
+### Installation
 
 ```bash
-npm run reset-project
+git clone https://github.com/Aksis716/tofes-mobile-app.git
+cd tofes-mobile-app
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Use the Expo terminal to launch Android, iOS, web, or Expo Go. For a native Android build:
 
-## Learn more
+```bash
+npm run android
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Configuration
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+The app uses Firebase. Add your own Firebase project configuration before running a production build, including any platform service files and notification credentials required by your environment.
 
-## Join the community
+## Portfolio note
 
-Join our community of developers creating universal apps.
+This repository is shared as a product showcase. TOFES illustrates how I approach real-time, content-rich mobile experiences: clear supporter journeys on one side and practical, role-aware operations tooling on the other.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# tofes-mobile-app
+## License
+
+All rights reserved. The source is provided for portfolio review; reuse or redistribution requires permission.
