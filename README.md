@@ -45,7 +45,7 @@ npm run android
 
 ## Configuration
 
-The app uses Firebase. Add your own Firebase project configuration before running a production build, including any platform service files and notification credentials required by your environment.
+The app uses Firebase. Copy `firebaseConfig.example.js` to `firebaseConfig.js` and replace its placeholders with your Firebase Web app configuration. Add the Android/iOS Firebase service files locally as needed; they are intentionally excluded from Git.
 
 ## Portfolio note
 
