@@ -20,6 +20,14 @@ Built as a production-minded Expo/React Native project, it demonstrates a full m
 - Expo Notifications, Image Picker, and device APIs
 - React Native Paper, Moti, Lucide, and SVG/chart components for the interface
 
+## Screens
+
+| Home | Schedule |
+| --- | --- |
+| ![TOFES home screen](./Screenshots/home.jpeg) | ![TOFES schedule screen](./Screenshots/schedule.jpeg) |
+| Lineup | Standings |
+| ![TOFES lineup screen](./Screenshots/lineup.jpeg) | ![TOFES standings screen](./Screenshots/table.jpeg) |
+
 ## Run locally
 
 ### Prerequisites
